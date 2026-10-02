@@ -1,13 +1,11 @@
-# jp-egov-law: Japanese law from e-Gov for Hermes Agent
+# jp-egov-law: Japanese laws for Hermes Agent, built on the e-Gov Law API
 
 Ask your Hermes agent about Japanese law and get the official text of the article, with its law
 number, the date the current version took effect, and a link to the source, instead of a
 paraphrase from memory.
 
-The data comes from [e-Gov 法令検索](https://laws.e-gov.go.jp/), the law database run by the
+The data comes from the API of [e-Gov 法令検索](https://laws.e-gov.go.jp/), the law database run by the
 Digital Agency of Japan (デジタル庁). No API key, no account, read-only.
-
-Unofficial: this plugin is not affiliated with or endorsed by the Digital Agency or e-Gov.
 
 > **日本語の要約**：エージェントに「労基法32条」「民法第四百十五条」「個人情報保護法の次の改正はいつ？」と聞くと、
 > e-Gov の公式な条文・法令番号・施行日・出典を返します。導入はコマンド1行、APIキー不要。
@@ -173,8 +171,7 @@ Every successful tool result carries `source.attribution`
 (`出典：e-Gov法令検索（https://laws.e-gov.go.jp/）のデータを hermes-plugin-egov-law が取得・整形（条単位の抽出等）`)
 and `retrieved_on`; the `egov_law_article` description and the `source.note` in every result ask the
 model to show it with any law text it quotes.
-This plugin is not affiliated with or endorsed by the Digital Agency or e-Gov. It retrieves law text;
-it does not give legal advice.
+The plugin retrieves law text; it does not give legal advice.
 
 ## Limitations
 
@@ -226,8 +223,8 @@ Python 3.11+ (what Hermes requires). No runtime dependencies.
 
 ## 日本語
 
-Hermes Agent から日本の法令を引くプラグインです。データはデジタル庁の e-Gov 法令検索（法令API v2）で、
-APIキーもアカウントも要りません。
+e-Gov 法令 API（v2）を活用して、Hermes Agent から日本の法令を引けるようにしたプラグインです。
+データはデジタル庁の e-Gov 法令検索から取り、APIキーもアカウントも要りません。
 
 - 条文を読む（`egov_law_article`）：「労基法32条」「民法第四百十五条」「個人情報保護法 第二十七条」のように、
   法令名・略称・法令番号と条番号を渡します。条番号は 第32条／32条／三十二条／32の2 のどれでも通り、1回で条文が返ります。
@@ -272,7 +269,7 @@ e-Gov が止まっていても入力待ちにはならず、1分半ほどでエ�
 - 改正で番号が変わった条や削除された条は、旧い番号では `article_not_found` になり、新しい番号は返しません。
   `as_of` を付けないときは、現行版の施行日の前日の版を1回だけ確かめます。そこに条があれば、いつまであったか・どの改正（施行日と改正法の題名・番号）で動いたか・旧い見出し（`previous_caption`）をエラーに入れ、見出しの語で `mode="text"` 検索するか e-Gov のページで確かめるよう案内します。
 - 条文中の表は1行ずつ「｜」区切りに平らにします。e-Gov の本文取得 API は試行版の扱いです。
-本プラグインは非公式で、デジタル庁・e-Gov とは関係がありません。法的助言ではありません。
+本プラグインは条文を取り出す道具で、法的助言はしません。
 
 ## License
 

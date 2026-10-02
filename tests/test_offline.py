@@ -47,7 +47,8 @@ def test_manifest_matches_registrations(plugin):
     assert "requires_env" not in manifest
     assert manifest["version"] == plugin.version.__version__
     assert manifest["manifest_version"] == 2 and manifest["requires_hermes"] == ">=0.21.4"
-    assert "Unofficial" in manifest["description"]
+    assert "built on the e-Gov Law API" in manifest["description"]
+    assert "Unofficial" not in manifest["description"] and "affiliated" not in manifest["description"]
     assert not (PLUGIN_DIR / "catalog-entry.yaml").exists()  # the catalog entry lives in the Hermes repo
 
 
