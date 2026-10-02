@@ -1,0 +1,8 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/keyword?keyword=%E6%9E%B6%E7%A9%BA%E6%B3%95%E4%BB%A4%E3%83%86%E3%82%B9%E3%83%88&limit=50",
+ "status": 404,
+ "body": {
+  "code": "404001",
+  "message": "取得結果が０件です。"
+ }
+}

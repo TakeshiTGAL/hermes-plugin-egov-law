@@ -1,0 +1,68 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/laws?law_id=322M40000100023&limit=1",
+ "status": 200,
+ "body": {
+  "total_count": 1,
+  "count": 1,
+  "laws": [
+   {
+    "law_info": {
+     "law_type": "MinisterialOrdinance",
+     "law_id": "322M40000100023",
+     "law_num": "昭和二十二年厚生省令第二十三号",
+     "law_num_era": "Showa",
+     "law_num_year": 22,
+     "law_num_type": "MinisterialOrdinance",
+     "law_num_num": "023",
+     "promulgation_date": "1947-08-30"
+    },
+    "revision_info": {
+     "law_revision_id": "322M40000100023_20260401_508M60000100057",
+     "law_type": "MinisterialOrdinance",
+     "law_title": "労働基準法施行規則",
+     "law_title_kana": "ろうどうきじゅんほうしこうきそく",
+     "abbrev": "労基法施行規則",
+     "category": "労働",
+     "updated": "2026-05-14T10:05:24+09:00",
+     "amendment_promulgate_date": "2026-03-31",
+     "amendment_enforcement_date": "2026-04-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": "508M60000100057",
+     "amendment_law_title": "労働者災害補償保険法施行規則等の一部を改正する省令",
+     "amendment_law_title_kana": null,
+     "amendment_law_num": "令和八年厚生労働省令第五十七号",
+     "amendment_type": "3",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    },
+    "current_revision_info": {
+     "law_revision_id": "322M40000100023_20260401_508M60000100057",
+     "law_type": "MinisterialOrdinance",
+     "law_title": "労働基準法施行規則",
+     "law_title_kana": "ろうどうきじゅんほうしこうきそく",
+     "abbrev": "労基法施行規則",
+     "category": "労働",
+     "updated": "2026-05-14T10:05:24+09:00",
+     "amendment_promulgate_date": "2026-03-31",
+     "amendment_enforcement_date": "2026-04-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": "508M60000100057",
+     "amendment_law_title": "労働者災害補償保険法施行規則等の一部を改正する省令",
+     "amendment_law_title_kana": null,
+     "amendment_law_num": "令和八年厚生労働省令第五十七号",
+     "amendment_type": "3",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    }
+   }
+  ]
+ }
+}

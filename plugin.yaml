@@ -1,0 +1,20 @@
+name: jp-egov-law
+version: 0.1.0
+manifest_version: 2
+requires_hermes: ">=0.21.4"
+description: >
+  Unofficial Japanese law lookup using the e-Gov law API (the law database run by the
+  Digital Agency of Japan): find laws by name, abbreviation or phrase, read one article as
+  in force today or on a past date, and check amendment history and enforcement dates.
+  Not affiliated with or endorsed by the Digital Agency or e-Gov.
+  Read-only, no API key, network calls to laws.e-gov.go.jp only.
+author: TakeshiTGAL
+license: MIT
+homepage: https://github.com/TakeshiTGAL/hermes-plugin-egov-law
+tags: [law, japan, legal, e-gov, government-data, research]
+
+provides_tools:
+  - egov_law_search
+  - egov_law_article
+  - egov_law_revisions
+provides_hooks: []

@@ -1,0 +1,68 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/laws?law_id=405AC0000000076&limit=1",
+ "status": 200,
+ "body": {
+  "total_count": 1,
+  "count": 1,
+  "laws": [
+   {
+    "law_info": {
+     "law_type": "Act",
+     "law_id": "405AC0000000076",
+     "law_num": "平成五年法律第七十六号",
+     "law_num_era": "Heisei",
+     "law_num_year": 5,
+     "law_num_type": "Act",
+     "law_num_num": "076",
+     "promulgation_date": "1993-06-18"
+    },
+    "revision_info": {
+     "law_revision_id": "405AC0000000076_20261001_507AC0000000063",
+     "law_type": "Act",
+     "law_title": "短時間労働者及び有期雇用労働者の雇用管理の改善等に関する法律",
+     "law_title_kana": "たんじかんろうどうしゃおよびゆうきこようろうどうしゃのこようかんりのかいぜんとうにかんするほうりつ",
+     "abbrev": "パートタイム法,パート労働法",
+     "category": "労働",
+     "updated": "2026-10-01T04:12:39+09:00",
+     "amendment_promulgate_date": "2025-06-11",
+     "amendment_enforcement_date": "2026-10-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": "507AC0000000063",
+     "amendment_law_title": "労働施策の総合的な推進並びに労働者の雇用の安定及び職業生活の充実等に関する法律等の一部を改正する法律",
+     "amendment_law_title_kana": null,
+     "amendment_law_num": "令和七年法律第六十三号",
+     "amendment_type": "3",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    },
+    "current_revision_info": {
+     "law_revision_id": "405AC0000000076_20261001_507AC0000000063",
+     "law_type": "Act",
+     "law_title": "短時間労働者及び有期雇用労働者の雇用管理の改善等に関する法律",
+     "law_title_kana": "たんじかんろうどうしゃおよびゆうきこようろうどうしゃのこようかんりのかいぜんとうにかんするほうりつ",
+     "abbrev": "パートタイム法,パート労働法",
+     "category": "労働",
+     "updated": "2026-10-01T04:12:39+09:00",
+     "amendment_promulgate_date": "2025-06-11",
+     "amendment_enforcement_date": "2026-10-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": "507AC0000000063",
+     "amendment_law_title": "労働施策の総合的な推進並びに労働者の雇用の安定及び職業生活の充実等に関する法律等の一部を改正する法律",
+     "amendment_law_title_kana": null,
+     "amendment_law_num": "令和七年法律第六十三号",
+     "amendment_type": "3",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    }
+   }
+  ]
+ }
+}

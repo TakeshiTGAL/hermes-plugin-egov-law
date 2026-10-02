@@ -1,0 +1,9 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/laws?limit=100&repeal_status=None&law_title=%E6%9E%B6%E7%A9%BA%E6%B3%95%E4%BB%A4%E3%83%86%E3%82%B9%E3%83%88",
+ "status": 200,
+ "body": {
+  "total_count": 0,
+  "count": 0,
+  "laws": []
+ }
+}

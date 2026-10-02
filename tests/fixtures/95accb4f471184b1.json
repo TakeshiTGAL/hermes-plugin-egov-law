@@ -1,0 +1,68 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/laws?law_id=505AC0000000025&limit=1",
+ "status": 200,
+ "body": {
+  "total_count": 1,
+  "count": 1,
+  "laws": [
+   {
+    "law_info": {
+     "law_type": "Act",
+     "law_id": "505AC0000000025",
+     "law_num": "令和五年法律第二十五号",
+     "law_num_era": "Reiwa",
+     "law_num_year": 5,
+     "law_num_type": "Act",
+     "law_num_num": "025",
+     "promulgation_date": "2023-05-12"
+    },
+    "revision_info": {
+     "law_revision_id": "505AC0000000025_20241101_000000000000000",
+     "law_type": "Act",
+     "law_title": "特定受託事業者に係る取引の適正化等に関する法律",
+     "law_title_kana": "とくていじゅたくじぎょうしゃにかかるとりひきのてきせいかとうにかんするほうりつ",
+     "abbrev": "フリーランス・事業者間取引適正化等法",
+     "category": "労働",
+     "updated": "2024-11-01T03:22:04+09:00",
+     "amendment_promulgate_date": "2023-05-12",
+     "amendment_enforcement_date": "2024-11-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": null,
+     "amendment_law_title": null,
+     "amendment_law_title_kana": null,
+     "amendment_law_num": null,
+     "amendment_type": "1",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    },
+    "current_revision_info": {
+     "law_revision_id": "505AC0000000025_20241101_000000000000000",
+     "law_type": "Act",
+     "law_title": "特定受託事業者に係る取引の適正化等に関する法律",
+     "law_title_kana": "とくていじゅたくじぎょうしゃにかかるとりひきのてきせいかとうにかんするほうりつ",
+     "abbrev": "フリーランス・事業者間取引適正化等法",
+     "category": "労働",
+     "updated": "2024-11-01T03:22:04+09:00",
+     "amendment_promulgate_date": "2023-05-12",
+     "amendment_enforcement_date": "2024-11-01",
+     "amendment_enforcement_comment": null,
+     "amendment_scheduled_enforcement_date": null,
+     "amendment_law_id": null,
+     "amendment_law_title": null,
+     "amendment_law_title_kana": null,
+     "amendment_law_num": null,
+     "amendment_type": "1",
+     "repeal_status": "None",
+     "repeal_date": null,
+     "remain_in_force": false,
+     "mission": "New",
+     "current_revision_status": "CurrentEnforced"
+    }
+   }
+  ]
+ }
+}

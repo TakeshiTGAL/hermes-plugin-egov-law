@@ -1,0 +1,8 @@
+{
+ "url": "https://laws.e-gov.go.jp/api/2/law_data/322AC0000000049?elm=MainProvision-Article_9999&json_format=full&omit_amendment_suppl_provision=true",
+ "status": 400,
+ "body": {
+  "code": "400021",
+  "message": "要素（elm）に合致する要素が法令本文に存在しません。"
+ }
+}
