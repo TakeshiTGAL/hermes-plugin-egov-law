@@ -147,7 +147,7 @@ The message is about a promulgated amendment or repeal that is not in force yet.
 
 e-Gov read errors (`timeout`, `network`, `upstream`, `bad_response`) are to be repeated on each weekly run. A bad law name is not an outage. `bad_request` and `not_found` mean e-Gov rejected the lookup. A response over 8 MB is `too_large`, not an outage. You can go up to 7 days without a notice, because the job runs once a week.
 
-The e-Gov call itself ends in about 90 seconds. This plugin does not cap how long the model turn waits.
+Each request to e-Gov waits at most 15 seconds, and this process sends at most one per second. A tool call makes at most six requests, so a hung e-Gov ends that call in about a minute and a half. This plugin does not cap how long the model turn waits.
 
 Delivery is `origin`: the chat where you created the job, or the home channel when the dashboard creates it without that chat. This plugin does not take a destination, so a schedule word cannot be stored as one. To send it somewhere else after the job exists, use Hermes's own `hermes cron edit <id> --deliver ...`. This plugin does not change an existing destination.
 
