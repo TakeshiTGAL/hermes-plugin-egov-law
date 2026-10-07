@@ -584,6 +584,26 @@ def test_a_failed_suppl_lookup_is_not_cached(plugin):
     assert calls["n"] == 2
 
 
+def test_a_missing_suppl_element_is_not_a_retry(plugin):
+    from collections import OrderedDict
+
+    calls = {"n": 0}
+
+    class Client:
+        resolve_cache = OrderedDict()
+
+        def get(self, path, params=None):
+            calls["n"] += 1
+            raise plugin.client.EgovError(
+                "bad_request", "e-Gov Law API returned HTTP 400 (400021: missing).",
+                "Fix that argument and call again.", status=400, api_code="400021")
+
+    client = Client()
+    assert plugin.laws._suppl_readings(client, "321CONSTITUTION", None, "第九条") == "absent"
+    assert plugin.laws._suppl_readings(client, "321CONSTITUTION", None, "第九条") == "absent"
+    assert calls["n"] == 1
+
+
 def test_a_failed_suppl_structure_check_is_not_swallowed(plugin):
     class Client:
         def get(self, path, params=None):
@@ -691,3 +711,4 @@ def test_a_provisional_date_keeps_date_fixed_false(plugin):
     assert "not a fixed day" in result["law_version"]["status"]
     assert result["law_version"]["enforcement_note"] == "この法律の施行の日"
     assert "could not be read" in result["text_notes"]
+    assert "do not loop more than twice" in result["text_notes"]

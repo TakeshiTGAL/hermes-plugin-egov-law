@@ -754,7 +754,10 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
         readings = _suppl_readings(client, resolved["key"], as_of, rendered["title"])
         if readings is None:
             notes.append("This law's own 附則 could not be read, so a transitional reading of this article "
-                         "may be missing. Call the article again.")
+                         "may be missing. Wait a minute and call the tool again; do not loop more than twice.")
+        elif readings == "absent":
+            notes.append("This API has no 附則 element for this law, so there is no transitional reading "
+                         "to fetch. Calling it again will not add one.")
         elif readings:
             notes.append(f"{'・'.join(readings)} of this law's own 附則 says how this article applies "
                          "(…の規定の適用については…). Some such transitional rules still apply and some have expired; "
@@ -820,7 +823,8 @@ def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) 
 
 def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_title: str) -> List[str]:
     """Articles of the law's own 附則 that read this article differently (…第N条の規定の適用については).
-    One request per law and date, cached on the client. A failed request is not cached."""
+    One request per law and date, cached on the client. A timeout or network failure is not cached.
+    HTTP 400 or 404 (no 附則 element) is cached as absent and is not a retry."""
     cache = client.resolve_cache
     cache_key = f"suppl::{key}::{as_of or ''}"
     if cache_key not in cache:
@@ -839,8 +843,13 @@ def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_
                     elif isinstance(child, dict):
                         stack.append(child)
             _cache_put(client, cache_key, {"articles": articles})
-        except EgovError:
-            return None
+        except EgovError as error:
+            if error.kind in ("bad_request", "not_found"):
+                _cache_put(client, cache_key, {"articles": [], "absent": True})
+            else:
+                return None
+    if cache[cache_key].get("absent"):
+        return "absent"
     pattern = re.compile(re.escape(article_title) + r"(?:第[〇一二三四五六七八九十百千]+項)?(?:及び[^の]*)?の規定の適用については")
     found = [label for label, text in cache[cache_key]["articles"] if pattern.search(text)]
     return sorted(set(found), key=found.index)
