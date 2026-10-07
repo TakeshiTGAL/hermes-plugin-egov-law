@@ -3,18 +3,7 @@ version: 0.1.1
 manifest_version: 2
 requires_hermes: ">=0.21.4"
 description: >
-  Silence is not "no amendment" (see hermes cron runs).
-  Japanese laws, built on the e-Gov Law API.
-  jp-egov-law:weekly-amendments: Mon 09:00 host clock, not Japan.
-  Unattended weekly turn (≥2 model requests). No daily cap.
-  Agent can start it. Twice = two jobs. Lag up to 7 days.
-  Out: Diet bills, 施行令, 施行規則.
-  Disclosure — HTTPS only to laws.e-gov.go.jp. No key. No plugin-data. No speaker name/id.
-  Cron stores law name and schedule. Unschedule: hermes cron remove <id> (kept after uninstall). Not a sandbox.
-  Deliver: origin, or home channel.
-  e-Gov errors repeat weekly. A bad law name is not an outage.
-  v0.21.4 and v0.21.5: no blueprint; egov_law_search, egov_law_article, egov_law_revisions on every platform, incl. gateways; guests can call them.
-  Disable a platform with hermes tools. tests/ not loaded.
+  Silence is not "no amendment" (hermes cron runs), built on the e-Gov Law API. jp-egov-law:weekly-amendments: Mon 09:00 Hermes tz, or host clock. Not shifted to Japan. Unattended weekly turn (≥2 model requests). No daily cap. Agent can start it. Twice = two jobs. Lag ≤7 days. Out: Diet bills, 施行令, 施行規則. Disclosure — HTTPS only to laws.e-gov.go.jp. No key. No plugin-data. No speaker name/id. Cron stores law name and schedule. hermes cron remove <id> (kept after uninstall). Not a sandbox. Deliver: chat, else home. Neither: kept on the job, not sent, not a failure. A bad law name is not an outage. v0.21.4 and v0.21.5: no blueprint; egov_law_search, egov_law_article, egov_law_revisions on every platform, incl. gateways; guests can call them. hermes tools disables a platform. tests/ not loaded.
 author: TakeshiTGAL
 license: MIT
 homepage: https://github.com/TakeshiTGAL/hermes-plugin-egov-law

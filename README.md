@@ -21,7 +21,7 @@ Digital Agency of Japan (デジタル庁). No API key, no account, read-only.
 | Asking by topic | 「年次有給休暇の付与日数を定めている条文は？」 | The agent knows the topic lives in 労基法39条: one `egov_law_article` call, whose `text_notes` points to the 附則 articles that read 第三十九条 differently; the agent read them too. When it does not know the article, `egov_law_search` with `mode="text"` finds the laws that mention the phrase first |
 | Using a vague name | 「公務員の育休の法律の第2条を見せて」 | The first call returns `ambiguous_law` with candidate law IDs; the agent reads 第2条 of both the 国家公務員 and the 地方公務員 law |
 | Reviewing work rules for changes | 「労基法で、次に施行される改正はある？」 | One `egov_law_revisions` call: the next amendment and its date; each row's `check` pair then shows whether a given article changes |
-| Checking one article against an amendment | 「労基法115条は2027年4月の改正で変わる？」 | One `egov_law_article` call with `as_of` (the day before) and `compare_with` (the day): changed or not, the line diff and the new wording. `text_notes` also points to 附則第143条, which keeps wage claims at three years for the time being; the same tool reads it |
+| Checking one article against an amendment | 「労基法115条は2027年4月の改正で変わる？」 | One `egov_law_article` call with `as_of` (the day before) and `compare_with` (the day): changed or not, the line diff and the new wording. `text_notes` also points to 附則第143条, which for the time being reads retirement-allowance claims as five years and other wage claims as three years; the same tool reads it |
 
 [`examples/scenarios.md`](examples/scenarios.md) records these requests run end to end: a separate
 model saw only what Hermes shows it, chose the calls, and wrote the final answers; every call went
@@ -106,6 +106,8 @@ second half of the budget and mid-line otherwise. Nothing is added to the text. 
 `"truncated": true` with `total_chars`, and `next_step` says which `max_chars` (up to 20,000) gets the rest.
 `as_of: "2018-01-01"` returns the wording in force on that date (e-Gov keeps versions from
 2017-04-01), and a future date returns the text as a scheduled amendment will make it read.
+When that version's `date_fixed` is false, `law_version.status` calls `in_force_since` a provisional
+date, not a fixed day, and `enforcement_note` quotes the law's own words for how the day is set.
 `url` always opens the law's current version on e-Gov, even when you asked for another date.
 
 `compare_with` adds a `comparison` in the same call: `changed` (true or false), a `diff` of whole
@@ -141,7 +143,7 @@ A search with no hits is not an error: it returns `"total_matches": 0` with a me
 
 ## Weekly amendment watch
 
-On a Hermes build that has plugin Automation Blueprints (not v0.21.4 or v0.21.5), the plugin adds `jp-egov-law:weekly-amendments` to `/blueprint` and the dashboard. The default is Monday at 09:00 on the computer's clock, which is not Japan time. Each run is one unattended agent turn that is asked to call `egov_law_revisions` once. A turn that calls a tool is at least two model requests. There is no daily cap. The agent can schedule it. Scheduling it twice creates two jobs.
+On a Hermes build that has plugin Automation Blueprints (not v0.21.4 or v0.21.5), the plugin adds `jp-egov-law:weekly-amendments` to `/blueprint` and the dashboard. The default is Monday at 09:00 in Hermes's timezone, or on the computer's clock if no timezone is set. It is not converted to Japan time. Each run is one unattended agent turn that is asked to call `egov_law_revisions` once. A turn that calls a tool is at least two model requests. There is no daily cap. The agent can schedule it. Scheduling it twice creates two jobs.
 
 The message is about a promulgated amendment or repeal that is not in force yet. Bills still in the Diet, and a separate 施行令 or 施行規則, are outside the check. A law that is already repealed is said to be repealed, not "no change". The prompt asks the model to include `source.attribution` unchanged. It also asks the model never to answer `[SILENT]`. That is not a guarantee: if no message arrives, check `hermes cron runs`. Silence is not "no amendment".
 
@@ -149,7 +151,7 @@ e-Gov read errors (`timeout`, `network`, `upstream`, `bad_response`) are to be r
 
 Each request to e-Gov waits at most 15 seconds, and this process sends at most one per second. A tool call makes at most six requests, so a hung e-Gov ends that call in about a minute and a half. This plugin does not cap how long the model turn waits.
 
-Delivery is `origin`: the chat where you created the job, or the home channel when the dashboard creates it without that chat. This plugin does not take a destination, so a schedule word cannot be stored as one. To send it somewhere else after the job exists, use Hermes's own `hermes cron edit <id> --deliver ...`. This plugin does not change an existing destination.
+Delivery is `origin`: the chat where you created the job, or the home channel when that chat was not recorded (the dashboard drops it). If there is no such chat and no home channel, Hermes keeps the text on the job (`last_output`) and does not send it, and does not mark that as a failure. Read it with `hermes cron runs`. This plugin does not take a destination, so a schedule word cannot be stored as one. To send it somewhere else after the job exists, use Hermes's own `hermes cron edit <id> --deliver ...`. This plugin does not change an existing destination.
 
 The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOME>/cron/jobs.json`, or `profiles/<name>/cron/jobs.json`). It is not under `plugin-data`. Uninstalling the plugin removes the blueprint from the catalog and leaves the job. Unschedule it with `hermes cron remove <id>`. The job is not a sandbox: it is a normal agent turn. The cron stores the law name and the schedule. This plugin does not record a speaker's name or id.
 
@@ -257,7 +259,7 @@ e-Gov 法令 API（v2）を活用して、Hermes Agent から日本の法令を�
   条文が変わるかは `check` の日付で確かめてください。廃止の予定は `scheduled_repeal` に出ます。
   すでに廃止された法律は `in_force_now` が空になり、`repealed_on` と、最後の文言を読むための `as_of`（廃止日の前日）を返します。
 
-Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` が週1回（既定は月曜 09:00、コンピュータの時計で、日本時間とは限りません）`egov_law_revisions` を1回呼ぶジョブのひな型になります。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。
+Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` が週1回（既定は月曜 09:00。Hermes のタイムゾーン、未設定ならコンピュータの時計。日本時間へは変換しません）`egov_law_revisions` を1回呼ぶジョブのひな型になります。届け先は作ったチャット、無ければホームチャネルです。どちらも無いときはジョブに残り、送信せず、失敗にもしません。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。
 
 導入1行、動作確認1行です。
 

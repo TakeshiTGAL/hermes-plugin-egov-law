@@ -562,6 +562,40 @@ def test_transitional_supplementary_reading_is_noted(plugin, replay):
     assert plugin.laws._suppl_readings(client, "322AC0000000049", None, "第三十二条") == []
 
 
+def test_a_failed_suppl_lookup_is_not_cached(plugin):
+    from collections import OrderedDict
+
+    calls = {"n": 0}
+
+    class Client:
+        resolve_cache = OrderedDict()
+
+        def get(self, path, params=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise plugin.client.EgovError("upstream", "e-Gov failed", "Try again.")
+            return {"law_full_text": {"children": []}}
+
+    client = Client()
+    assert plugin.laws._suppl_readings(client, "X", None, "第百十五条") == []
+    assert client.resolve_cache == {}
+    assert plugin.laws._suppl_readings(client, "X", None, "第百十五条") == []
+    assert calls["n"] == 2
+
+
+def test_a_failed_suppl_structure_check_is_not_swallowed(plugin):
+    class Client:
+        def get(self, path, params=None):
+            raise plugin.client.EgovError("upstream", "e-Gov failed", "Try again.")
+
+    try:
+        plugin.laws._require_suppl_without_articles(Client(), {"key": "1"}, "労働基準法", 2, None)
+    except plugin.client.EgovError as error:
+        assert error.kind == "upstream"
+    else:
+        raise AssertionError("the check failure was swallowed")
+
+
 def test_repealed_law_is_not_in_force(plugin, replay):
     """行政機関個人情報保護法 (415AC0000000058) was repealed on 2022-04-01 (recorded 2026-10-02)."""
     result = call(replay, "egov_law_revisions", law="415AC0000000058")
@@ -614,4 +648,11 @@ def test_version_status_uses_the_versions_own_date(plugin):
     status = plugin.laws._version_status
     assert status({"amendment_enforcement_date": "2026-07-17"}, "2099-01-01").startswith("in force now")
     assert status({"amendment_enforcement_date": "2099-01-01"}, "2099-06-01").startswith("not yet in force")
+    provisional = status({
+        "amendment_enforcement_date": "2028-12-23",
+        "current_revision_status": "UnEnforced",
+        "amendment_enforcement_comment": "この法律の施行の日",
+    }, "2028-12-23")
+    assert provisional.startswith("not yet in force (provisional date 2028-12-23, not a fixed day)")
+    assert "takes effect" not in provisional
     assert status({"amendment_enforcement_date": "2018-01-01"}, "2018-06-01") == "version in force on 2018-06-01"

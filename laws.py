@@ -719,10 +719,12 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
         "caption": rendered["caption"] or None,
         "text": text,
         "paragraphs": rendered["paragraphs"] or None,
-        "law_version": {
+            "law_version": {
             "note": "Version of the whole law. This article did not necessarily change in it.",
             "in_force_since": _enforcement_date(revision),
             "status": _version_status(revision, as_of),
+            "date_fixed": _date_fixed(revision),
+            "enforcement_note": revision.get("amendment_enforcement_comment"),
             "last_amended_by": _amended_by(revision),
             "law_revision_id": revision.get("law_revision_id"),
         },
@@ -780,6 +782,9 @@ def _version_status(revision: dict, as_of: Optional[str]) -> str:
     since = _enforcement_date(revision) or ""
     today = _today_jst()
     if since > today:
+        if _date_fixed(revision) is False:
+            return (f"not yet in force (provisional date {since}, not a fixed day): "
+                    f"the text as scheduled to read on {as_of}")
         return f"not yet in force (takes effect {since}): the text as scheduled to read on {as_of}"
     if as_of > today:
         return f"in force now (also the version on {as_of}, unless a later amendment is promulgated)"
@@ -798,11 +803,8 @@ def _drop_sub_paragraph(rest: str):
 def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) -> None:
     """'附則第2項' only exists when the 附則 has no articles; otherwise e-Gov would match a paragraph
     nested in some article and we would mislabel it."""
-    try:
-        data = client.get(f"law_data/{resolved['key']}", {"elm": "SupplProvision", "json_format": "full",
-                                                          "asof": as_of, "omit_amendment_suppl_provision": "true"})
-    except EgovError:
-        return
+    data = client.get(f"law_data/{resolved['key']}", {"elm": "SupplProvision", "json_format": "full",
+                                                      "asof": as_of, "omit_amendment_suppl_provision": "true"})
     node = data.get("law_full_text") or {}
     if any(_tag(child) == "Article" for child in _children(node)):
         raise EgovError(
@@ -815,7 +817,7 @@ def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) 
 
 def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_title: str) -> List[str]:
     """Articles of the law's own 附則 that read this article differently (…第N条の規定の適用については).
-    One request per law and date, cached on the client; any failure just means no note."""
+    One request per law and date, cached on the client. A failed request is not cached."""
     cache = client.resolve_cache
     cache_key = f"suppl::{key}::{as_of or ''}"
     if cache_key not in cache:
@@ -835,7 +837,7 @@ def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_
                         stack.append(child)
             _cache_put(client, cache_key, {"articles": articles})
         except EgovError:
-            _cache_put(client, cache_key, {"articles": []})
+            return []
     pattern = re.compile(re.escape(article_title) + r"(?:第[〇一二三四五六七八九十百千]+項)?(?:及び[^の]*)?の規定の適用については")
     found = [label for label, text in cache[cache_key]["articles"] if pattern.search(text)]
     return sorted(set(found), key=found.index)
