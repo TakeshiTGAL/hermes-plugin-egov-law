@@ -23,11 +23,8 @@ Digital Agency of Japan (デジタル庁). No API key, no account, read-only.
 | Reviewing work rules for changes | 「労基法で、次に施行される改正はある？」 | One `egov_law_revisions` call: the next amendment and its date; each row's `check` pair then shows whether a given article changes |
 | Checking one article against an amendment | 「労基法115条は2027年4月の改正で変わる？」 | One `egov_law_article` call with `as_of` (the day before) and `compare_with` (the day): changed or not, the line diff and the new wording. `text_notes` also points to 附則第143条, which for the time being reads retirement-allowance claims as five years and other wage claims as three years; the same tool reads it |
 
-[`examples/scenarios.md`](examples/scenarios.md) records these requests run end to end: a separate
-model saw only what Hermes shows it, chose the calls, and wrote the final answers; every call went
-through Hermes's own dispatcher against the live API. Five of the eight needed one tool call (plus a
-`tool_describe` in S1); the topic question read two 附則 articles the result pointed to, the vague name
-needed one call for the candidates and one per law, and the amendment check also read 附則第143条.
+[`examples/scenarios.md`](examples/scenarios.md) is a record of an earlier end-to-end run. This
+revision was not run through a model again.
 
 ## Install
 

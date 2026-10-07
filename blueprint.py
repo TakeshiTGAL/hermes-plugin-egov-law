@@ -71,14 +71,16 @@ SLOTS = (
         "default": "monday",
         "options": ("sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"),
         "strict": True,
-        "help": "A weekday name. The clock is the computer running Hermes, not Japan time.",
+        "help": "A weekday name. Hermes's timezone, or the computer's clock if none is set. "
+        "Not converted to Japan time.",
     },
     {
         "name": "time",
         "type": "time",
         "label": "What time?",
         "default": "09:00",
-        "help": "24-hour time on the computer running Hermes, not Japan time. Example: 09:00.",
+        "help": "24-hour time in Hermes's timezone, or the computer's clock if none is set. "
+        "Not converted to Japan time. Example: 09:00.",
     },
 )
 DELIVER_DEFAULT = "origin"

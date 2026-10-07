@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import socket
+import urllib.error
 import threading
 import time
 from pathlib import Path
@@ -577,7 +578,7 @@ def test_a_failed_suppl_lookup_is_not_cached(plugin):
             return {"law_full_text": {"children": []}}
 
     client = Client()
-    assert plugin.laws._suppl_readings(client, "X", None, "第百十五条") == []
+    assert plugin.laws._suppl_readings(client, "X", None, "第百十五条") is None
     assert client.resolve_cache == {}
     assert plugin.laws._suppl_readings(client, "X", None, "第百十五条") == []
     assert calls["n"] == 2
@@ -656,3 +657,37 @@ def test_version_status_uses_the_versions_own_date(plugin):
     assert provisional.startswith("not yet in force (provisional date 2028-12-23, not a fixed day)")
     assert "takes effect" not in provisional
     assert status({"amendment_enforcement_date": "2018-01-01"}, "2018-06-01") == "version in force on 2018-06-01"
+
+
+def test_a_provisional_date_keeps_date_fixed_false(plugin):
+    body = {
+        "law_info": {"law_id": "322AC0000000049", "law_num": "昭和二十二年法律第四十九号"},
+        "revision_info": {
+            "law_title": "労働基準法",
+            "law_revision_id": "rev",
+            "current_revision_status": "UnEnforced",
+            "amendment_enforcement_date": "2028-12-23",
+            "amendment_enforcement_comment": "この法律の施行の日",
+        },
+        "law_full_text": {
+            "tag": "Article",
+            "children": [
+                {"tag": "ArticleTitle", "children": ["第三十二条"]},
+                {"tag": "Paragraph", "children": [
+                    {"tag": "ParagraphSentence", "children": [{"tag": "Sentence", "children": ["本文"]}]},
+                ]},
+            ],
+        },
+    }
+
+    def transport(url, timeout):
+        if "SupplProvision" in url:
+            raise urllib.error.URLError("suppl down")
+        return 200, json.dumps(body).encode()
+
+    client = plugin.client.EgovClient(transport=transport, min_interval=0)
+    result = plugin.laws.get_article(client, "322AC0000000049", "32", as_of="2099-01-01")
+    assert result["law_version"]["date_fixed"] is False
+    assert "not a fixed day" in result["law_version"]["status"]
+    assert result["law_version"]["enforcement_note"] == "この法律の施行の日"
+    assert "could not be read" in result["text_notes"]

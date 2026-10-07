@@ -49,6 +49,9 @@ def test_register_sends_the_weekly_watch_when_the_api_exists(plugin):
     )
     assert seen["slots"][0]["default"] == "労働基準法"
     assert seen["slots"][2]["default"] == "09:00"
+    assert "Not converted to Japan time" in day["help"]
+    assert "not Japan time" not in day["help"]
+    assert "Not converted to Japan time" in seen["slots"][2]["help"]
 
 
 def test_a_failing_blueprint_api_does_not_drop_the_tools(plugin):

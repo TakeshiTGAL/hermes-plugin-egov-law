@@ -752,8 +752,11 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
                      + ("paragraph" if ref is not None and ref.paragraph else "article") + " is returned.")
     if not suppl and ref is not None and rendered["title"]:
         readings = _suppl_readings(client, resolved["key"], as_of, rendered["title"])
-        if readings:
-            notes.append(f"{'・'.join(readings)} of this law's 附則 says how this article applies "
+        if readings is None:
+            notes.append("This law's own 附則 could not be read, so a transitional reading of this article "
+                         "may be missing. Call the article again.")
+        elif readings:
+            notes.append(f"{'・'.join(readings)} of this law's own 附則 says how this article applies "
                          "(…の規定の適用については…). Some such transitional rules still apply and some have expired; "
                          "if the answer depends on what applies, read it with article='" + readings[0] + "'.")
     if notes:
@@ -768,7 +771,7 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
                             if total <= MAX_MAX_CHARS else
                             f"Text cut at {max_chars} of {total} characters. Read it one paragraph at a time "
                             "with `paragraph`.")
-    out["law_version"] = {k: v for k, v in out["law_version"].items() if v}
+    out["law_version"] = {k: v for k, v in out["law_version"].items() if v not in (None, "")}
     return {k: v for k, v in out.items() if v not in (None, "")}
 
 
@@ -837,7 +840,7 @@ def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_
                         stack.append(child)
             _cache_put(client, cache_key, {"articles": articles})
         except EgovError:
-            return []
+            return None
     pattern = re.compile(re.escape(article_title) + r"(?:第[〇一二三四五六七八九十百千]+項)?(?:及び[^の]*)?の規定の適用については")
     found = [label for label, text in cache[cache_key]["articles"] if pattern.search(text)]
     return sorted(set(found), key=found.index)
