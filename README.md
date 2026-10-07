@@ -157,8 +157,9 @@ The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOM
 
 ## Network, data and privacy
 
-- **One host.** The plugin sends HTTPS GET requests to `https://laws.e-gov.go.jp/api/2` and nowhere
-  else. The request contains what the agent looks up (a law name, article number or search phrase).
+- **One host.** The plugin sends HTTPS GET requests only to `https://laws.e-gov.go.jp`, under the
+  path `/api/2`, and nowhere else. The request contains what the agent looks up (a law name, article
+  number or search phrase).
   Redirects are followed only to `https://laws.e-gov.go.jp`; one to another host or to plain HTTP is refused.
 - **No credentials.** The API is public; the plugin reads no environment variables and stores no keys.
   (Python's `urllib` still uses the system proxy settings such as `HTTPS_PROXY`.)
@@ -230,7 +231,7 @@ The plugin retrieves law text; it does not give legal advice.
 Test dependencies: pytest 8 and PyYAML 6.
 
 ```bash
-pytest -q                    # offline tests + live tests (about 35 paced requests to e-Gov)
+pytest -q                    # offline tests + live tests when e-Gov answers (about 35 paced requests). If it cannot be reached, the live tests are skipped.
 pytest -q -m "not live"      # offline only (recorded responses in tests/fixtures)
 python tests/record_fixtures.py   # re-record the responses the offline tests replay
 hermes plugins validate . --install-deps   # the check the Hermes plugin catalog runs
@@ -274,7 +275,7 @@ GitHub ではなく手元から入れる場合は、git clone したディレク
 `hermes plugins install file:///path/to/hermes-plugin-egov-law --enable` で指定します（「Using insecure/local URL scheme」という警告が出ますが、導入されます）。
 メッセージ連携（gateway）を使っている場合は、`hermes gateway restart` を一度打ってください。
 
-通信先は `https://laws.e-gov.go.jp/api/2` だけで、e-Gov 以外へは何も送りません。ファイルも書きません。
+通信先は `https://laws.e-gov.go.jp` の `/api/2` だけで、e-Gov 以外へは何も送りません。ファイルも書きません。
 1回のツール呼び出しで e-Gov への問い合わせは1〜6回、1秒に1回までに抑えています。1回ごとに通信が15秒止まれば打ち切るので、
 e-Gov が止まっていても入力待ちにはならず、1分半ほどでエラーが返ります。
 返り値には出典表示 `出典：e-Gov法令検索（https://laws.e-gov.go.jp/）のデータを hermes-plugin-egov-law が取得・整形（条単位の抽出等）`

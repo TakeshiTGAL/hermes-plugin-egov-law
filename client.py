@@ -1,4 +1,4 @@
-"""HTTP client for the e-Gov Law API v2 (https://laws.e-gov.go.jp/api/2).
+"""HTTP client for the e-Gov Law API v2 (https://laws.e-gov.go.jp, path /api/2).
 
 Standard library only, so the plugin installs with no dependencies. No
 credentials: the API is public and unauthenticated. Every request goes to
@@ -20,8 +20,8 @@ from typing import Callable, Optional, Tuple
 
 from .version import __version__
 
-API_BASE = "https://laws.e-gov.go.jp/api/2"
 SITE_BASE = "https://laws.e-gov.go.jp"
+API_BASE = SITE_BASE + "/api/2"
 USER_AGENT = f"hermes-plugin-egov-law/{__version__} (+https://github.com/TakeshiTGAL/hermes-plugin-egov-law)"
 TIMEOUT_SECONDS = 15.0
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024

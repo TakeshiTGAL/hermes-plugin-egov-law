@@ -66,6 +66,36 @@ def replay(plugin):
 LIVE_REQUESTS = []
 
 
+@pytest.fixture
+def needs_local_socket():
+    """These tests open a socket on this machine. A harness that blocks every connect skips them."""
+    import socket
+    try:
+        socket.create_connection(("127.0.0.1", 1), timeout=0.2)
+    except RuntimeError:
+        pytest.skip("socket connect is blocked")
+    except OSError:
+        return
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip live tests when e-Gov cannot be reached, including a blocked socket.
+
+    ``pytest -m "not live"`` does not open a connection. Those tests are not run.
+    """
+    if (getattr(config.option, "markexpr", "") or "").strip() == "not live":
+        return
+    try:
+        import socket
+        sock = socket.create_connection(("laws.e-gov.go.jp", 443), timeout=5)
+        sock.close()
+    except Exception:
+        skip = pytest.mark.skip(reason="e-Gov is not reachable")
+        for item in items:
+            if "live" in item.keywords:
+                item.add_marker(skip)
+
+
 @pytest.fixture(scope="session")
 def live(plugin):
     """Handlers that call the real e-Gov API: one shared client (its name cache keeps the request count

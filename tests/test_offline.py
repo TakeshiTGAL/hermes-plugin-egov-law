@@ -249,7 +249,7 @@ def silent_server():
     server.close()
 
 
-def test_silent_host_times_out_with_a_message(plugin, silent_server):
+def test_silent_host_times_out_with_a_message(plugin, silent_server, needs_local_socket):
     client = plugin.client.EgovClient(base_url=silent_server, timeout=0.5)
     handlers = plugin.tools.make_handlers(client)
     for name, args in [("egov_law_search", {"query": "労働基準法"}),
@@ -263,7 +263,7 @@ def test_silent_host_times_out_with_a_message(plugin, silent_server):
         assert "Wait a minute" in result["next_step"]
 
 
-def test_refused_connection_is_a_network_error(plugin):
+def test_refused_connection_is_a_network_error(plugin, needs_local_socket):
     probe = socket.socket()
     probe.bind(("127.0.0.1", 0))
     port = probe.getsockname()[1]
@@ -275,7 +275,7 @@ def test_refused_connection_is_a_network_error(plugin):
 
 
 @pytest.mark.parametrize("location", ["https://example.invalid/api/2/laws", "http://laws.e-gov.go.jp/api/2/laws"])
-def test_redirects_away_from_e_gov_are_refused(plugin, location):
+def test_redirects_away_from_e_gov_are_refused(plugin, location, needs_local_socket):
     """A redirect to another host, or to plain HTTP, is refused before any connection to it."""
     import http.server
 
