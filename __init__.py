@@ -6,11 +6,11 @@ history and enforcement dates. Read-only, no credentials, network calls go to
 laws.e-gov.go.jp only.
 """
 
-from . import schemas, tools
+from . import blueprint, schemas, tools
 
 
 def register(ctx):
-    """Register the three read-only tools under the `egov_law` toolset."""
+    """Register the three read-only tools, then the blueprint when Hermes has it."""
     for schema in schemas.ALL_SCHEMAS:
         ctx.register_tool(
             name=schema["name"],
@@ -19,3 +19,4 @@ def register(ctx):
             handler=tools.HANDLERS[schema["name"]],
             emoji="⚖️",
         )
+    blueprint.register_blueprint(ctx)
