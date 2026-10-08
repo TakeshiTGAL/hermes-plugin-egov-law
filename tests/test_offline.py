@@ -503,7 +503,7 @@ def test_compare_with_reports_a_line_diff(plugin):
 
 
 def test_a_compare_outage_is_not_a_deleted_article(plugin):
-    """HTTP 400 with a code other than 400021, and HTTP 404, fail the call. 400021 stays 'absent'."""
+    """400021 and 404004 mean the article is absent on that date. 400038 and any other 400 or 404 fail the call."""
     def article(sentence):
         return {"law_info": {"law_id": "322AC0000000049", "law_num": "n"},
                 "revision_info": {"law_title": "労働基準法", "amendment_enforcement_date": "2026-04-01",
@@ -531,6 +531,12 @@ def test_a_compare_outage_is_not_a_deleted_article(plugin):
     gone = run(400, b'{"code":"400021","message":"elm"}')
     assert "error" not in gone
     assert gone["comparison"]["exists"] is False and gone["comparison"]["changed"] is True
+    bad_elm = run(400, '{"code":"400038","message":"法令XMLの要素（elm）が誤っています。"}'.encode())
+    assert bad_elm["error_type"] == "bad_request"
+    assert "comparison" not in bad_elm and "text" not in bad_elm
+    no_version = run(404, '{"code":"404004","message":"指定のパラメータで取得できる法令本文ファイルは存在しません。"}'.encode())
+    assert "error" not in no_version and no_version["text"]
+    assert no_version["comparison"]["exists"] is False and no_version["comparison"]["changed"] is True
 
 
 EXPECTED_ALIAS_TITLES = {
@@ -681,6 +687,29 @@ def test_a_suppl_error_other_than_400021_is_not_remembered_as_absent(plugin):
         assert calls["n"] == 2
         assert "could not be read" not in second.get("text_notes", "")
         assert "will not add one" not in second.get("text_notes", "")
+
+
+def test_a_bad_elm_name_is_not_a_missing_article(plugin):
+    """HTTP 400 code 400038 is an elm format error, even when the message contains 'elm'."""
+    def transport(url, timeout):
+        return 400, '{"code":"400038","message":"法令XMLの要素（elm）が誤っています。"}'.encode()
+
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    result = json.loads(handlers["egov_law_article"]({"law": "322AC0000000049", "article": "1", "paragraph": 2}))
+    assert result["error_type"] == "bad_request"
+    assert result["error_type"] != "article_not_found"
+    assert result["error_type"] != "paragraph_not_found"
+
+
+def test_a_suppl_paragraph_without_a_suppl_element_is_article_not_found(plugin):
+    """A law with no 附則 element (the Constitution) answers 附則第2項 with article_not_found."""
+    def transport(url, timeout):
+        return 400, '{"code":"400021","message":"要素（elm）に合致する要素が法令本文に存在しません。"}'.encode()
+
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    result = json.loads(handlers["egov_law_article"]({"law": "321CONSTITUTION", "article": "附則第2項"}))
+    assert result["error_type"] == "article_not_found"
+    assert "附則第2項" in result["error"] or "附則第二項" in result["error"]
 
 
 def test_a_failed_suppl_structure_check_is_not_swallowed(plugin):

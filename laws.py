@@ -637,8 +637,7 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
                            "omit_amendment_suppl_provision": "true"})
     except EgovError as error:
         name = resolved.get("law_title") or _title_for(client, resolved["key"]) or str(law)
-        if ref is not None and ref.paragraph and not suppl and (
-                error.api_code == "400021" or (error.status == 400 and "elm" in error.message)):
+        if ref is not None and ref.paragraph and not suppl and error.api_code == "400021":
             count = _paragraph_count(client, resolved["key"], ref, as_of)
             if count:
                 raise EgovError(
@@ -649,7 +648,7 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
                     "If the paragraph is added by an upcoming amendment, call with as_of=<its in_force_since>.",
                     status=error.status, api_code=error.api_code,
                 ) from None
-        if error.api_code == "400021" or (error.status == 400 and "elm" in error.message):
+        if error.api_code == "400021":
             law_id, moved = None, None
             if ref is not None and not as_of and not LAW_REVISION_ID_RE.match(resolved["key"]):
                 law_id, moved = _article_before_current_version(client, resolved["key"], suppl, ref)
@@ -809,8 +808,17 @@ def _drop_sub_paragraph(rest: str):
 def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) -> None:
     """'附則第2項' only exists when the 附則 has no articles; otherwise e-Gov would match a paragraph
     nested in some article and we would mislabel it."""
-    data = client.get(f"law_data/{resolved['key']}", {"elm": "SupplProvision", "json_format": "full",
-                                                      "asof": as_of, "omit_amendment_suppl_provision": "true"})
+    try:
+        data = client.get(f"law_data/{resolved['key']}", {"elm": "SupplProvision", "json_format": "full",
+                                                          "asof": as_of, "omit_amendment_suppl_provision": "true"})
+    except EgovError as error:
+        # 400021 means this law has no 附則 element (the Constitution). The paragraph
+        # request then reports article_not_found. Any other failure stays that error,
+        # so a nested paragraph is not returned as 附則第N項.
+        if error.api_code == "400021":
+            return
+        raise
+
     node = data.get("law_full_text") or {}
     if any(_tag(child) == "Article" for child in _children(node)):
         raise EgovError(
@@ -863,9 +871,10 @@ def _compare(client: EgovClient, key: str, elm: str, text: str, other_date: str,
         data = client.get(f"law_data/{key}", {"elm": elm, "json_format": "full", "asof": other_date,
                                               "omit_amendment_suppl_provision": "true"})
     except EgovError as error:
-        # Only the API's "no such element" answer means the article is absent on that date.
-        # Any other 400, and a 404, is an outage or a rejected lookup, not a deletion.
-        if error.api_code == "400021" or (error.status == 400 and "elm" in error.message):
+        # 400021: this element is not in the text on that date.
+        # 404004: e-Gov has no law text file for that date, so the article is not there either.
+        # 400038 is a bad elm name. Any other 400, and any other 404, is not a deletion.
+        if error.api_code in ("400021", "404004"):
             return {"as_of": other_date, "exists": False, "changed": True,
                     "note": "This article (or paragraph) does not exist in the version in force on that date."}
         raise

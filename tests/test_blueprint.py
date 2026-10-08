@@ -93,4 +93,7 @@ def test_prompt_states_the_watch_rules(plugin):
     manifest = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text(encoding="utf-8"))
     assert "Disclosure —" in manifest["description"]
     assert "weekly-amendments" in manifest["description"]
-    assert len(manifest["description"]) <= 800
+    assert "does not create a cron job" in manifest["description"]
+    assert "one model turn runs once a week" in manifest["description"]
+    assert "at least two model requests" in manifest["description"]
+    assert len(manifest["description"]) <= 1500
