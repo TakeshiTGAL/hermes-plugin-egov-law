@@ -579,6 +579,9 @@ def test_a_compare_outage_is_not_a_deleted_article(plugin):
     no_version = run(404, '{"code":"404004","message":"指定のパラメータで取得できる法令本文ファイルは存在しません。"}'.encode())
     assert "error" not in no_version and no_version["text"]
     assert no_version["comparison"]["exists"] is False and no_version["comparison"]["changed"] is True
+    empty = run(200, b"{}")
+    assert empty["error_type"] == "bad_response"
+    assert "comparison" not in empty and "text" not in empty
 
 
 EXPECTED_ALIAS_TITLES = {
@@ -681,6 +684,64 @@ def test_a_missing_suppl_element_is_not_a_retry(plugin):
     assert plugin.laws._suppl_readings(client, "321CONSTITUTION", None, "第九条") == "absent"
     assert plugin.laws._suppl_readings(client, "321CONSTITUTION", None, "第九条") == "absent"
     assert calls["n"] == 1
+
+
+def test_an_empty_suppl_body_is_not_cached_as_no_reading(plugin):
+    """HTTP 200 {} has no 附則 text. That is not 'no transitional reading', and it is not cached."""
+    article = {
+        "law_info": {"law_id": "322AC0000000049", "law_num": "昭和二十二年法律第四十九号"},
+        "revision_info": {
+            "law_title": "労働基準法",
+            "law_revision_id": "rev",
+            "current_revision_status": "CurrentEnforced",
+            "amendment_enforcement_date": "2026-04-01",
+        },
+        "law_full_text": {
+            "tag": "Article",
+            "children": [
+                {"tag": "ArticleTitle", "children": ["第三十二条"]},
+                {"tag": "Paragraph", "children": [
+                    {"tag": "ParagraphSentence", "children": [{"tag": "Sentence", "children": ["本文"]}]},
+                ]},
+            ],
+        },
+    }
+    payload = json.dumps(article).encode()
+    calls = {"n": 0}
+
+    def transport(url, timeout):
+        if "SupplProvision" in url:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return 200, b"{}"
+            return 200, b'{"law_full_text":{"children":[]}}'
+        return 200, payload
+
+    client = plugin.client.EgovClient(transport=transport, min_interval=0)
+    first = plugin.laws.get_article(client, "322AC0000000049", "32")
+    assert "could not be read" in first["text_notes"]
+    assert "will not add one" not in first["text_notes"]
+    assert client.resolve_cache == {}
+    second = plugin.laws.get_article(client, "322AC0000000049", "32")
+    assert calls["n"] == 2
+    assert "could not be read" not in second.get("text_notes", "")
+
+
+def test_an_empty_suppl_body_does_not_open_a_paragraph(plugin):
+    """A 200 with no 附則 text must not continue into 附則第N項 and return a nested paragraph."""
+    def transport(url, timeout):
+        if "Paragraph" in url:
+            return 200, json.dumps({
+                "law_full_text": {"tag": "Paragraph", "children": [
+                    {"tag": "ParagraphSentence", "children": [{"tag": "Sentence", "children": ["入れ子"]}]},
+                ]},
+            }).encode()
+        return 200, b"{}"
+
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    result = json.loads(handlers["egov_law_article"]({"law": "322AC0000000049", "article": "附則第2項"}))
+    assert result["error_type"] == "bad_response"
+    assert "入れ子" not in result.get("text", "") and "入れ子" not in result.get("error", "")
 
 
 def test_a_suppl_error_other_than_400021_is_not_remembered_as_absent(plugin):

@@ -154,7 +154,7 @@ Each request to e-Gov waits at most 15 seconds, and this process sends at most o
 
 Delivery is `origin`: the chat where you created the job, or the home channel when that chat was not recorded (the dashboard drops it). If there is no such chat and no home channel, Hermes keeps the text on the job (`last_output`) and does not send it, and does not mark that as a failure. Read it with `hermes cron runs`. This plugin does not take a destination, so a schedule word cannot be stored as one. To send it somewhere else after the job exists, use Hermes's own `hermes cron edit <id> --deliver ...`. This plugin does not change an existing destination.
 
-The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOME>/cron/jobs.json`, or `profiles/<name>/cron/jobs.json`). It is not under `plugin-data`. Uninstalling the plugin removes the blueprint from the catalog and leaves the job. Unschedule it with `hermes cron remove <id>`. The job is not a sandbox: it is a normal agent turn. The cron stores the law name and the schedule. This plugin does not record a speaker's name or id.
+The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOME>/cron/jobs.json`, or `profiles/<name>/cron/jobs.json`). It is not under `plugin-data`. Uninstalling the plugin removes the blueprint from the catalog and leaves the job. Unschedule it with `hermes cron remove <id>`. The job is not a sandbox: it is a normal agent turn. The cron prompt stores the law name and the schedule. This plugin writes no speaker name or id. When the agent creates the job from a chat, Hermes stores that chat's origin on the job: platform, chat id, chat name, thread id, user id, and scope id, for the values that session has. Creating it from the dashboard drops that origin.
 
 `egov_law_search`, `egov_law_article`, and `egov_law_revisions` stay available on v0.21.4 and v0.21.5, where the blueprint is skipped. Those tools are on for every platform by default, including gateways, so a guest a gateway admits can call them. Disable a platform with `hermes tools`. `tests/` is not loaded by `register()`.
 
@@ -262,7 +262,7 @@ e-Gov 法令 API（v2）を活用して、Hermes Agent から日本の法令を�
   条文が変わるかは `check` の日付で確かめてください。廃止の予定は `scheduled_repeal` に出ます。
   すでに廃止された法律は `in_force_now` が空になり、`repealed_on` と、最後の文言を読むための `as_of`（廃止日の前日）を返します。
 
-Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` をひな型として登録するだけで、cron ジョブは作りません。エージェント自身もこのひな型からジョブを作れます。2回作るとジョブが2つできます。利用者がひな型からジョブを作ると、週1回（既定は月曜 09:00。Hermes のタイムゾーン、未設定ならコンピュータの時計。日本時間へは変換しません）モデルが1ターン動き、`egov_law_revisions` を1回呼ぶよう頼まれます。道具を呼ぶとそのターンはモデルへの要求が2回以上になり、日次の上限はありません。届け先は作ったチャット、無ければホームチャネルです。どちらも無いときはジョブに残り、送信せず、失敗にもしません。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。
+Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` をひな型として登録するだけで、cron ジョブは作りません。エージェント自身もこのひな型からジョブを作れます。2回作るとジョブが2つできます。利用者がひな型からジョブを作ると、週1回（既定は月曜 09:00。Hermes のタイムゾーン、未設定ならコンピュータの時計。日本時間へは変換しません）モデルが1ターン動き、`egov_law_revisions` を1回呼ぶよう頼まれます。道具を呼ぶとそのターンはモデルへの要求が2回以上になり、日次の上限はありません。届け先は作ったチャット、無ければホームチャネルです。どちらも無いときはジョブに残り、送信せず、失敗にもしません。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。このプラグイン自身は話者の名前や ID を書きません。エージェントがチャットからジョブを作ると、Hermes がそのジョブに、そのチャットの識別子（プラットフォーム、チャット ID、チャット名、スレッド ID、ユーザー ID、スコープ ID。セッションにあるもの）を残します。ダッシュボードから作ると、その識別子は捨てます。
 
 導入1行、動作確認1行です。
 

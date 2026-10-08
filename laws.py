@@ -841,7 +841,13 @@ def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) 
             return
         raise
 
-    node = data.get("law_full_text") or {}
+    node = data.get("law_full_text")
+    if not node:
+        raise EgovError(
+            "bad_response",
+            "e-Gov returned no 附則 text for this law.",
+            "Try again later; if it repeats, open the law's e-Gov page.",
+        )
     if any(_tag(child) == "Article" for child in _children(node)):
         raise EgovError(
             "article_not_found",
@@ -862,7 +868,10 @@ def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_
         try:
             data = client.get(f"law_data/{key}", {"elm": "SupplProvision", "json_format": "full", "asof": as_of,
                                                   "omit_amendment_suppl_provision": "true"})
-            node = data.get("law_full_text") or {}
+            node = data.get("law_full_text")
+            # A 200 with no law_full_text is not "this 附則 has no articles". Do not cache it.
+            if not node:
+                return None
             articles = []
             stack = [node]
             while stack:
@@ -900,7 +909,14 @@ def _compare(client: EgovClient, key: str, elm: str, text: str, other_date: str,
             return {"as_of": other_date, "exists": False, "changed": True,
                     "note": "This article (or paragraph) does not exist in the version in force on that date."}
         raise
-    other = render_article(data.get("law_full_text") or {})["text"]
+    full_text = data.get("law_full_text")
+    if not full_text:
+        raise EgovError(
+            "bad_response",
+            "e-Gov returned no text for this article on the comparison date.",
+            "Try again later; if it repeats, open the law's e-Gov page.",
+        )
+    other = render_article(full_text)["text"]
     revision = data.get("revision_info") or {}
     if other == text:
         return {"as_of": other_date, "changed": False,
