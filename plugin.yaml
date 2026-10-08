@@ -2,8 +2,8 @@ name: jp-egov-law
 version: 0.1.1
 manifest_version: 2
 requires_hermes: ">=0.21.4"
-description: >
-  Silence is not "no amendment" (hermes cron runs), built on the e-Gov Law API. jp-egov-law:weekly-amendments: Mon 09:00 Hermes tz, or host clock. Not shifted to Japan. Unattended weekly turn (≥2 model requests). No daily cap. Agent can start it. Twice = two jobs. Lag ≤7 days. Out: Diet bills, 施行令, 施行規則. Disclosure — HTTPS only to laws.e-gov.go.jp. No key. No plugin-data. No speaker name/id. Cron stores law name and schedule. hermes cron remove <id> (kept after uninstall). Not a sandbox. Deliver: chat, else home. Neither: kept on the job, not sent, not a failure. A bad law name is not an outage. v0.21.4 and v0.21.5: no blueprint; egov_law_search, egov_law_article, egov_law_revisions on every platform, incl. gateways; guests can call them. hermes tools disables a platform. tests/ not loaded.
+description: >-
+  Japanese laws for Hermes Agent, built on the e-Gov Law API: find a law by name, abbreviation or phrase, read one article as in force today or on a given date, and check amendment history and enforcement dates, with the source credit e-Gov's terms ask for. Disclosure — sends the law names, article numbers, dates and search phrases you look up to laws.e-gov.go.jp (public API, no key); no other host, nothing written to disk. Automation Blueprints add jp-egov-law:weekly-amendments weekly (Mon 09:00, Hermes tz or host clock if unset, not converted to Japan); silence is not "no amendment", uninstall leaves the cron until hermes cron remove. Tools stay on every platform, including gateways (a guest can call them; hermes tools disables one); v0.21.4 and v0.21.5 load tools and skip the blueprint.
 author: TakeshiTGAL
 license: MIT
 homepage: https://github.com/TakeshiTGAL/hermes-plugin-egov-law

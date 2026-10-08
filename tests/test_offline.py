@@ -604,6 +604,54 @@ def test_a_missing_suppl_element_is_not_a_retry(plugin):
     assert calls["n"] == 1
 
 
+def test_a_suppl_error_other_than_400021_is_not_remembered_as_absent(plugin):
+    """A 400 with any code but 400021, and a 404, are not cached. The article note asks for one retry."""
+    article = {
+        "law_info": {"law_id": "322AC0000000049", "law_num": "昭和二十二年法律第四十九号"},
+        "revision_info": {
+            "law_title": "労働基準法",
+            "law_revision_id": "rev",
+            "current_revision_status": "CurrentEnforced",
+            "amendment_enforcement_date": "2026-04-01",
+        },
+        "law_full_text": {
+            "tag": "Article",
+            "children": [
+                {"tag": "ArticleTitle", "children": ["第三十二条"]},
+                {"tag": "Paragraph", "children": [
+                    {"tag": "ParagraphSentence", "children": [{"tag": "Sentence", "children": ["本文"]}]},
+                ]},
+            ],
+        },
+    }
+    payload = json.dumps(article).encode()
+    cases = (
+        (400, b'{"code":"400099","message":"temporary"}'),
+        (404, b'{"code":"404009","message":"missing"}'),
+    )
+    for status, body in cases:
+        calls = {"n": 0}
+
+        def transport(url, timeout, status=status, body=body, calls=calls):
+            if "SupplProvision" in url:
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    return status, body
+                return 200, b'{"law_full_text":{"children":[]}}'
+            return 200, payload
+
+        client = plugin.client.EgovClient(transport=transport, min_interval=0)
+        first = plugin.laws.get_article(client, "322AC0000000049", "32")
+        assert "could not be read" in first["text_notes"]
+        assert "do not loop more than twice" in first["text_notes"]
+        assert "will not add one" not in first["text_notes"]
+        assert client.resolve_cache == {}
+        second = plugin.laws.get_article(client, "322AC0000000049", "32")
+        assert calls["n"] == 2
+        assert "could not be read" not in second.get("text_notes", "")
+        assert "will not add one" not in second.get("text_notes", "")
+
+
 def test_a_failed_suppl_structure_check_is_not_swallowed(plugin):
     class Client:
         def get(self, path, params=None):

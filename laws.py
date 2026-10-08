@@ -823,8 +823,9 @@ def _require_suppl_without_articles(client, resolved, law, paragraph_no, as_of) 
 
 def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_title: str) -> List[str]:
     """Articles of the law's own 附則 that read this article differently (…第N条の規定の適用については).
-    One request per law and date, cached on the client. A timeout or network failure is not cached.
-    HTTP 400 or 404 (no 附則 element) is cached as absent and is not a retry."""
+    One request per law and date, cached on the client. A timeout, network failure, upstream error,
+    or broken response is not cached. Only HTTP 400 whose body code is 400021 (no 附則 element)
+    is cached as absent and is not a retry. Any other 400, and a 404, are not cached."""
     cache = client.resolve_cache
     cache_key = f"suppl::{key}::{as_of or ''}"
     if cache_key not in cache:
@@ -844,7 +845,8 @@ def _suppl_readings(client: EgovClient, key: str, as_of: Optional[str], article_
                         stack.append(child)
             _cache_put(client, cache_key, {"articles": articles})
         except EgovError as error:
-            if error.kind in ("bad_request", "not_found"):
+            # 400021 is the API's "this law has no 附則 element". Other 400s and 404s can be transient.
+            if error.kind == "bad_request" and error.api_code == "400021":
                 _cache_put(client, cache_key, {"articles": [], "absent": True})
             else:
                 return None
