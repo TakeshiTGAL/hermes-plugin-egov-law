@@ -109,7 +109,9 @@ date, not a fixed day, and `enforcement_note` quotes the law's own words for how
 
 `compare_with` adds a `comparison` in the same call: `changed` (true or false), a `diff` of whole
 paragraph and item lines (`-` the text on `as_of`, `+` the text on `compare_with`) and the wording on
-`compare_with`. The diff is also kept within `max_chars`. To see what one amendment does to an article,
+`compare_with`. The diff is also kept within `max_chars`. Only HTTP 400 with body code `400021` (or a
+400 whose message says the element is missing) means that article is absent on the comparison date.
+Any other 400, and a 404, fails the whole call. It is not a report that the wording changed. To see what one amendment does to an article,
 use the `check` pair that `egov_law_revisions` gives each amendment: `as_of` = the day before it takes
 effect, `compare_with` = the day. Amendments taking effect on the same day cannot be told apart.
 
