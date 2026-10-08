@@ -727,6 +727,9 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
         raise EgovError("bad_response", "e-Gov returned no text for this article.",
                         "Try again later; if it repeats, open the url in a browser to read the law.")
     rendered = render_article(full_text)
+    if not rendered["text"].strip():
+        raise EgovError("bad_response", "e-Gov returned no text for this article.",
+                        "Try again later; if it repeats, open the url in a browser to read the law.")
     text, truncated = _trim(rendered["text"], max_chars)
     has_table = '"TableStruct"' in json.dumps(full_text, ensure_ascii=False)
     out = {
@@ -917,6 +920,12 @@ def _compare(client: EgovClient, key: str, elm: str, text: str, other_date: str,
             "Try again later; if it repeats, open the law's e-Gov page.",
         )
     other = render_article(full_text)["text"]
+    if not other.strip():
+        raise EgovError(
+            "bad_response",
+            "e-Gov returned no text for this article on the comparison date.",
+            "Try again later; if it repeats, open the law's e-Gov page.",
+        )
     revision = data.get("revision_info") or {}
     if other == text:
         return {"as_of": other_date, "changed": False,

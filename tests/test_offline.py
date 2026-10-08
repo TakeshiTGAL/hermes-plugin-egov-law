@@ -582,6 +582,24 @@ def test_a_compare_outage_is_not_a_deleted_article(plugin):
     empty = run(200, b"{}")
     assert empty["error_type"] == "bad_response"
     assert "comparison" not in empty and "text" not in empty
+    for hollow in ({"children": []}, {"tag": "Article", "children": []}):
+        blank = run(200, json.dumps({"law_full_text": hollow}).encode())
+        assert blank["error_type"] == "bad_response"
+        assert "comparison" not in blank and "text" not in blank
+
+
+def test_a_main_body_with_nothing_to_render_is_an_error(plugin):
+    """A 200 whose law_full_text has no text is not an article with empty wording."""
+    for hollow in ({"children": []}, {"tag": "Article", "children": []}):
+        def transport(url, timeout, hollow=hollow):
+            return 200, json.dumps({"law_info": {"law_id": "322AC0000000049", "law_num": "n"},
+                                    "revision_info": {"law_title": "労働基準法"},
+                                    "law_full_text": hollow}).encode()
+
+        handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+        result = json.loads(handlers["egov_law_article"]({"law": "322AC0000000049", "article": "1"}))
+        assert result["error_type"] == "bad_response"
+        assert "text" not in result
 
 
 EXPECTED_ALIAS_TITLES = {
