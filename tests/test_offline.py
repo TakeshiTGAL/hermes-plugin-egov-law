@@ -123,6 +123,17 @@ def test_text_search_returns_snippets_without_markup(replay):
             assert "<span" not in snippet
 
 
+def test_clean_snippet_strips_tags_without_retrying_every_bracket(plugin):
+    clean = plugin.laws._clean_snippet
+    assert clean("前<span>年次有給休暇</span>後") == "前年次有給休暇後"
+    assert clean("a < b") == "a < b"
+    assert clean("<>") == "<>"
+    blob = "<" * 200_000
+    started = time.perf_counter()
+    assert clean(blob) == blob
+    assert time.perf_counter() - started < 1.0
+
+
 # --- Criterion 4 on recorded responses -------------------------------------
 
 def test_unknown_law_is_zero_results_not_error(replay):
@@ -328,6 +339,37 @@ def test_ambiguous_name_lists_candidates(plugin):
     result = json.loads(handlers["egov_law_article"]({"law": "労働", "article": "1"}))
     assert result["error_type"] == "ambiguous_law"
     assert "労働基準法 [300AC0000000001]" in result["next_step"]
+
+
+def test_a_revision_history_without_a_list_is_not_no_amendment(plugin):
+    """HTTP 200 {} has no revisions key. That is not 'this law is not in force yet'."""
+    def transport(url, timeout):
+        if transport.mode == "missing":
+            body = b"{}"
+        elif transport.mode == "text":
+            body = b'{"revisions":"nope"}'
+        else:
+            body = b'{"law_info":{"law_id":"341AC0000000132"},"revisions":[]}'
+        return 200, body
+
+    transport.mode = "missing"
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    missing = json.loads(handlers["egov_law_revisions"]({"law": "341AC0000000132"}))
+    assert missing["error_type"] == "bad_response"
+    assert "No promulgated amendment" not in missing["error"]
+    assert "not in force yet" not in missing["error"]
+
+    transport.mode = "text"
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    bad = json.loads(handlers["egov_law_revisions"]({"law": "341AC0000000132"}))
+    assert bad["error_type"] == "bad_response"
+
+    transport.mode = "empty"
+    handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+    empty = json.loads(handlers["egov_law_revisions"]({"law": "341AC0000000132"}))
+    assert "error_type" not in empty
+    assert "This law is not in force yet." in empty["message"]
+    assert "No promulgated amendment" in empty["message"]
 
 
 def test_upstream_500_and_non_json_are_errors(plugin):

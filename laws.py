@@ -370,8 +370,30 @@ def search_laws(client: EgovClient, query: str, mode: str = "title", limit=10,
 
 
 def _clean_snippet(text: str) -> str:
-    text = re.sub(r"</?span[^>]*>", "", str(text or ""))
-    return re.sub(r"<[^>]+>", "", text).strip()
+    """Drop `<...>` tags in one left-to-right pass.
+
+    A `<` with no later `>` is kept, including a long run of `<`. The old
+    `<[^>]+>` pattern did the same, but it retried from every `<` and took
+    seconds on a few hundred thousand of them (the response cap is 8 MB).
+    """
+    raw = str(text or "")
+    out = []
+    i = 0
+    n = len(raw)
+    while i < n:
+        start = raw.find("<", i)
+        if start < 0:
+            out.append(raw[i:])
+            break
+        out.append(raw[i:start])
+        end = raw.find(">", start + 1)
+        if end < 0:
+            out.append(raw[start:])
+            break
+        i = end + 1  # `<[^>]+>` needs at least one character between the brackets
+        if end == start + 1:
+            out.append("<>")
+    return "".join(out).strip()
 
 
 def _search_text(client: EgovClient, phrase: str, limit: int) -> dict:
@@ -1002,7 +1024,15 @@ def get_revisions(client: EgovClient, law: str, limit=10) -> dict:
                             status=404, api_code=error.api_code) from None
         raise
     info = data.get("law_info") or {}
-    revisions = data.get("revisions") or []
+    revisions = data.get("revisions")
+    # A missing key, null, or any non-list is not "no amendment". An empty list is:
+    # e-Gov sent a history and it has no rows (the law is not in force yet).
+    if not isinstance(revisions, list):
+        raise EgovError(
+            "bad_response",
+            "e-Gov returned no revision list for this law.",
+            "Try again later; if it repeats, open the law's e-Gov page.",
+        )
     all_titles = {r.get("law_title") for r in revisions if r.get("law_title")} | {resolved.get("law_title")}
     rows = [_revision_row(r, sorted(t for t in all_titles if t)) for r in revisions]
     today = _today_jst()

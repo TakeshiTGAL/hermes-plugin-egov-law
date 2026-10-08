@@ -96,4 +96,6 @@ def test_prompt_states_the_watch_rules(plugin):
     assert "does not create a cron job" in manifest["description"]
     assert "one model turn runs once a week" in manifest["description"]
     assert "at least two model requests" in manifest["description"]
+    assert "The agent can schedule it" in manifest["description"]
+    assert "scheduling it twice creates two jobs" in manifest["description"]
     assert len(manifest["description"]) <= 1500

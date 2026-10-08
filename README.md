@@ -144,7 +144,7 @@ A search with no hits is not an error: it returns `"total_matches": 0` with a me
 
 ## Weekly amendment watch
 
-On a Hermes build that has plugin Automation Blueprints (not v0.21.4 or v0.21.5), the plugin registers `jp-egov-law:weekly-amendments` on `/blueprint` and the dashboard. It does not create a cron job. When you create a job from that blueprint, the default is Monday at 09:00 in Hermes's timezone, or on the computer's clock if no timezone is set. It is not converted to Japan time. Each run is one unattended agent turn that is asked to call `egov_law_revisions` once. A turn that calls a tool is at least two model requests. There is no daily cap. Scheduling it twice creates two jobs.
+On a Hermes build that has plugin Automation Blueprints (not v0.21.4 or v0.21.5), the plugin registers `jp-egov-law:weekly-amendments` on `/blueprint` and the dashboard. It does not create a cron job. The agent can schedule it. When you create a job from that blueprint, the default is Monday at 09:00 in Hermes's timezone, or on the computer's clock if no timezone is set. It is not converted to Japan time. Each run is one unattended agent turn that is asked to call `egov_law_revisions` once. A turn that calls a tool is at least two model requests. There is no daily cap. Scheduling it twice creates two jobs.
 
 The message is about a promulgated amendment or repeal that is not in force yet. Bills still in the Diet, and a separate 施行令 or 施行規則, are outside the check. A law that is already repealed is said to be repealed, not "no change". The prompt asks the model to include `source.attribution` unchanged. It also asks the model never to answer `[SILENT]`. That is not a guarantee: if no message arrives, check `hermes cron runs`. Silence is not "no amendment".
 
@@ -262,7 +262,7 @@ e-Gov 法令 API（v2）を活用して、Hermes Agent から日本の法令を�
   条文が変わるかは `check` の日付で確かめてください。廃止の予定は `scheduled_repeal` に出ます。
   すでに廃止された法律は `in_force_now` が空になり、`repealed_on` と、最後の文言を読むための `as_of`（廃止日の前日）を返します。
 
-Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` をひな型として登録するだけで、cron ジョブは作りません。利用者がひな型からジョブを作ると、週1回（既定は月曜 09:00。Hermes のタイムゾーン、未設定ならコンピュータの時計。日本時間へは変換しません）モデルが1ターン動き、`egov_law_revisions` を1回呼ぶよう頼まれます。道具を呼ぶとそのターンはモデルへの要求が2回以上になり、日次の上限はありません。届け先は作ったチャット、無ければホームチャネルです。どちらも無いときはジョブに残り、送信せず、失敗にもしません。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。
+Hermes に Automation Blueprints の登録口がある版では、`jp-egov-law:weekly-amendments` をひな型として登録するだけで、cron ジョブは作りません。エージェント自身もこのひな型からジョブを作れます。2回作るとジョブが2つできます。利用者がひな型からジョブを作ると、週1回（既定は月曜 09:00。Hermes のタイムゾーン、未設定ならコンピュータの時計。日本時間へは変換しません）モデルが1ターン動き、`egov_law_revisions` を1回呼ぶよう頼まれます。道具を呼ぶとそのターンはモデルへの要求が2回以上になり、日次の上限はありません。届け先は作ったチャット、無ければホームチャネルです。どちらも無いときはジョブに残り、送信せず、失敗にもしません。v0.21.4 と v0.21.5 にはこの口が無く、3つの道具だけが動きます。届かないことは「改正なし」ではありません。`hermes cron runs` を見てください。プラグインを消しても cron は残るので、`hermes cron remove <id>` で消します。
 
 導入1行、動作確認1行です。
 
