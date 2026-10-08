@@ -63,9 +63,9 @@ loads the full schema when it needs it. No configuration is required.
 
 - Official title: `労働基準法`, `個人情報の保護に関する法律`
 - e-Gov abbreviation: `労基法`, `個人情報保護法`, `安衛法`, `労契法`
-- Common short names e-Gov does not index, built in: `個情法`, `特商法`, `下請法`, `雇保法`, `育介法`, `育児休業法`, `電帳法`,
-  `パート法`, `フリーランス法`, `派遣法`, `均等法`, `憲法`, `健保法`, `厚年法`, `パワハラ防止法`, `高年法`,
-  `労基則`, `雇保則`
+- Common short names e-Gov does not index, built in: `個情法`, `特商法`, `下請法`, `雇保法`, `育介法`, `育児休業法`,
+  `パート法`, `パート有期法`, `パートタイム・有期雇用労働法`, `フリーランス法`, `フリーランス新法`, `派遣法`, `均等法`,
+  `憲法`, `健保法`, `厚年法`, `パワハラ防止法`, `高年法`, `労基則`, `労規則`, `雇保則`, `電帳法`
 - Law number, kanji or digits: `昭和二十二年法律第四十九号`, `昭和22年法律第49号`
 - e-Gov law ID: `322AC0000000049`
 
@@ -146,7 +146,7 @@ The message is about a promulgated amendment or repeal that is not in force yet.
 
 e-Gov read errors (`timeout`, `network`, `upstream`, `bad_response`) are to be repeated on each weekly run. A bad law name is not an outage. `bad_request` and `not_found` mean e-Gov rejected the lookup. A response over 8 MB is `too_large`, not an outage. You can go up to 7 days without a notice, because the job runs once a week.
 
-Each request to e-Gov waits at most 15 seconds, and this process sends at most one per second. A tool call makes at most six requests, so a hung e-Gov ends that call in about a minute and a half. This plugin does not cap how long the model turn waits.
+Each request to e-Gov waits at most 15 seconds, and this process sends at most one per second. A tool call makes at most six requests, and none when the arguments are rejected before any request, so a hung e-Gov ends that call in about a minute and a half. This plugin does not cap how long the model turn waits.
 
 Delivery is `origin`: the chat where you created the job, or the home channel when that chat was not recorded (the dashboard drops it). If there is no such chat and no home channel, Hermes keeps the text on the job (`last_output`) and does not send it, and does not mark that as a failure. Read it with `hermes cron runs`. This plugin does not take a destination, so a schedule word cannot be stored as one. To send it somewhere else after the job exists, use Hermes's own `hermes cron edit <id> --deliver ...`. This plugin does not change an existing destination.
 
@@ -166,9 +166,10 @@ The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOM
   answers and the law's own 附則 articles read for `text_notes` are kept in process memory (at most 256
   entries together, oldest dropped first) and disappear when Hermes exits. Scheduling the weekly
   blueprint stores a Hermes cron job, which remains after uninstall (`hermes cron remove <id>`).
-- **Never waits for input.** No prompts. A tool call makes one to six requests (name lookup, the
-  text, the 附則 check, a comparison, error details such as the previous version of a missing article),
-  at most one per second from the process, each with a 15-second socket timeout and an 8 MB response cap.
+- **Never waits for input.** No prompts. A tool call makes at most six requests, and none when the
+  arguments are rejected before any request. Those requests are a name lookup, the text, the 附則 check,
+  a comparison, and error details such as the previous version of a missing article. The process sends
+  at most one per second, each with a 15-second socket timeout and an 8 MB response cap.
   Even when e-Gov hangs, a call ends with an error in about a minute and a half, so cron jobs and the
   gateway are not stuck.
 - **Gentle on e-Gov.** The one-request-per-second pace is built in; e-Gov is a public service.
@@ -266,7 +267,8 @@ hermes chat -Q -q "労働基準法第32条の条文を見せて"
 ```
 
 略称は e-Gov の略称（労基法・個人情報保護法・安衛法など）に加え、個情法・特商法・下請法・雇保法・育介法・育児休業法・
-パート法・フリーランス法・派遣法・均等法・憲法・健保法・厚年法・電帳法・パワハラ防止法・高年法・労基則・雇保則を組み込んでいます。
+パート法・パート有期法・パートタイム・有期雇用労働法・フリーランス法・フリーランス新法・派遣法・均等法・憲法・健保法・厚年法・
+電帳法・パワハラ防止法・高年法・労基則・労規則・雇保則を組み込んでいます。
 
 Hermes は v0.21.4 以上が必要です（`hermes --version` で確認）。古い場合は先に `hermes update` を打ってください。
 `--enable` を付け忘れたら `hermes plugins enable jp-egov-law` を打ってください。
@@ -275,7 +277,7 @@ GitHub ではなく手元から入れる場合は、git clone したディレク
 メッセージ連携（gateway）を使っている場合は、`hermes gateway restart` を一度打ってください。
 
 通信先は `https://laws.e-gov.go.jp` の `/api/2` だけで、e-Gov 以外へは何も送りません。ファイルも書きません。
-1回のツール呼び出しで e-Gov への問い合わせは1〜6回、1秒に1回までに抑えています。1回ごとに通信が15秒止まれば打ち切るので、
+1回のツール呼び出しで e-Gov への問い合わせは最大6回です（引数が悪く、通信の前に拒んだときは0回）。1秒に1回までに抑えています。1回ごとに通信が15秒止まれば打ち切るので、
 e-Gov が止まっていても入力待ちにはならず、1分半ほどでエラーが返ります。
 返り値には出典表示 `出典：e-Gov法令検索（https://laws.e-gov.go.jp/）のデータを hermes-plugin-egov-law が取得・整形（条単位の抽出等）`
 が入ります。e-Gov の利用規約（公共データ利用規約 第1.0版）に沿って、条文を見せるときはこの出典も一緒に示してください。

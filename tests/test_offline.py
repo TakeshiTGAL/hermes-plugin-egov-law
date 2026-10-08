@@ -502,6 +502,37 @@ def test_compare_with_reports_a_line_diff(plugin):
     assert bad["error_type"] == "bad_argument" and "compare_with" in bad["error"]
 
 
+def test_a_compare_outage_is_not_a_deleted_article(plugin):
+    """HTTP 400 with a code other than 400021, and HTTP 404, fail the call. 400021 stays 'absent'."""
+    def article(sentence):
+        return {"law_info": {"law_id": "322AC0000000049", "law_num": "n"},
+                "revision_info": {"law_title": "労働基準法", "amendment_enforcement_date": "2026-04-01",
+                                  "current_revision_status": "CurrentEnforced"},
+                "law_full_text": node("Article", node("ArticleTitle", "第一条"),
+                                      node("Paragraph", node("ParagraphNum"),
+                                           node("ParagraphSentence", node("Sentence", sentence))))}
+
+    def run(status, body):
+        def transport(url, timeout):
+            if "asof=2027-04-01" in url and "SupplProvision" not in url:
+                return status, body
+            return 200, json.dumps(article("本文。"), ensure_ascii=False).encode()
+
+        handlers = plugin.tools.make_handlers(plugin.client.EgovClient(transport=transport, min_interval=0))
+        return json.loads(handlers["egov_law_article"]({"law": "322AC0000000049", "article": "1",
+                                                         "compare_with": "2027-04-01"}))
+
+    overload = run(400, b'{"code":"400099","message":"temporary overload"}')
+    assert overload["error_type"] == "bad_request"
+    assert "comparison" not in overload and "text" not in overload
+    missing = run(404, b'{"code":"404009","message":"missing"}')
+    assert missing["error_type"] == "not_found"
+    assert "comparison" not in missing and "text" not in missing
+    gone = run(400, b'{"code":"400021","message":"elm"}')
+    assert "error" not in gone
+    assert gone["comparison"]["exists"] is False and gone["comparison"]["changed"] is True
+
+
 EXPECTED_ALIAS_TITLES = {
     "個情法": "個人情報の保護に関する法律",
     "特商法": "特定商取引に関する法律",

@@ -863,7 +863,9 @@ def _compare(client: EgovClient, key: str, elm: str, text: str, other_date: str,
         data = client.get(f"law_data/{key}", {"elm": elm, "json_format": "full", "asof": other_date,
                                               "omit_amendment_suppl_provision": "true"})
     except EgovError as error:
-        if error.api_code == "400021" or error.status in (400, 404):
+        # Only the API's "no such element" answer means the article is absent on that date.
+        # Any other 400, and a 404, is an outage or a rejected lookup, not a deletion.
+        if error.api_code == "400021" or (error.status == 400 and "elm" in error.message):
             return {"as_of": other_date, "exists": False, "changed": True,
                     "note": "This article (or paragraph) does not exist in the version in force on that date."}
         raise
