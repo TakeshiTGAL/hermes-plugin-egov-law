@@ -14,6 +14,8 @@ _LAW_ARG = {
 SEARCH = {
     "name": "egov_law_search",
     "description": (
+        "Returns law titles, numbers, IDs and the official e-Gov URL; use it when the law is not already named; read-only. "
+        "If you did not call this tool, say you did not search and do not invent a law number. "
         "Find Japanese laws: query='労基法'; mode='text' searches text. "
         "Searches e-Gov, the official law database of the Digital Agency of Japan. Returns title, "
         "law number (法令番号), law ID, type, abbreviation, the date the current version took effect, "
@@ -39,7 +41,7 @@ SEARCH = {
                 "type": "string",
                 "enum": ["title", "text"],
                 "default": "title",
-                "description": "'title' searches names and abbreviations; 'text' searches the body of laws.",
+                "description": "mode is title or text. title matches names and abbreviations; text matches the body of laws.",
             },
             "limit": {
                 "type": "integer",
@@ -61,6 +63,9 @@ SEARCH = {
 ARTICLE = {
     "name": "egov_law_article",
     "description": (
+        "Returns one article's official text plus source.as_of, source.retrieved_at and source.url; "
+        "use it when a law and an article are named; read-only. "
+        "If you did not call this tool, say you did not fetch it and do not write the article from memory. "
         "Japanese law article: law='労基法', article='32' or '三十二条の二'. "
         "Official text from e-Gov (Digital Agency of Japan), as in force today or on a given date. "
         "One call is enough: pass the law by name or abbreviation and the article number in "
@@ -99,7 +104,7 @@ ARTICLE = {
             "as_of": {
                 "type": "string",
                 "description": (
-                    "Optional date YYYY-MM-DD, 2017-04-01 or later (e-Gov keeps versions from then). A past "
+                    "YYYY-MM-DD on or after 2017-04-01. A past "
                     "date returns the text in force that day; a future date returns the text as already-passed "
                     "amendments will make it read. Leave out for the current text."
                 ),
@@ -107,7 +112,7 @@ ARTICLE = {
             "compare_with": {
                 "type": "string",
                 "description": (
-                    "Optional second date YYYY-MM-DD (2017-04-01 or later). Adds `comparison`: whether this "
+                    "YYYY-MM-DD on or after 2017-04-01. Adds `comparison`: whether this "
                     "article reads differently on that date than on as_of (today if omitted), a line diff and "
                     "that wording, in the same call. To isolate one amendment, use the check pair from "
                     "egov_law_revisions: as_of = the day before, compare_with = the day it takes effect."
@@ -131,6 +136,9 @@ ARTICLE = {
 REVISIONS = {
     "name": "egov_law_revisions",
     "description": (
+        "Returns amendment and enforcement dates, the official URL, and source.retrieved_at; "
+        "use it when the question is when a change takes effect; read-only. "
+        "If you did not call this tool, say you did not fetch the history and do not invent an act number. "
         "Japanese law amendment & enforcement dates: law='民法'. "
         "From e-Gov (改正履歴・施行日): which version is in force now and since when, "
         "amendments already passed but not yet in force with their scheduled dates, "

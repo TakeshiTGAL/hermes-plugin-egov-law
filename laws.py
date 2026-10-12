@@ -91,8 +91,44 @@ def _today_jst() -> str:
     return (_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(hours=9)).date().isoformat()
 
 
-def _source() -> dict:
-    return {"attribution": ATTRIBUTION, "retrieved_on": _today_jst(), "note": ATTRIBUTION_NOTE}
+SEARCH_FIELDS = ["query", "mode", "limit", "include_repealed"]
+ARTICLE_FIELDS = ["law", "article", "paragraph", "as_of", "compare_with", "max_chars"]
+REVISION_FIELDS = ["law", "limit"]
+
+
+def _bad_argument(field: str, problem: str, expected: str, allowed: List[str], hint: str) -> None:
+    """断る値は、こちらの表の field / problem / expected / allowed_fields。入力の値は載せない。"""
+    raise EgovError(
+        "bad_argument",
+        f"{field} is not accepted ({problem}). Expected: {expected}.",
+        hint,
+        details={
+            "field": field,
+            "problem": problem,
+            "expected": expected,
+            "allowed_fields": list(allowed),
+        },
+    )
+
+
+def _now_utc() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _source(url: Optional[str] = None, as_of: Optional[str] = None) -> dict:
+    payload = {
+        "attribution": ATTRIBUTION,
+        "retrieved_on": _today_jst(),
+        "retrieved_at": _now_utc(),
+        "url": url or "https://laws.e-gov.go.jp/",
+        "note": (
+            "Pass attribution, retrieved_at, url and as_of along with any article you quote. "
+            "If you did not call the tool, say you did not fetch it. Do not write the article from memory."
+        ),
+    }
+    if as_of:
+        payload["as_of"] = as_of
+    return payload
 
 
 def _clamp(value, default: int, low: int, high: int) -> int:
@@ -110,8 +146,10 @@ def _check_date(value: Optional[str], name: str) -> Optional[str]:
     try:
         _dt.date.fromisoformat(text)
     except ValueError:
-        raise EgovError("bad_argument", f"{name} must be a date like 2024-04-01, got {value!r}.",
-                        f"Pass {name} as YYYY-MM-DD, or leave it out for the version in force today.")
+        _bad_argument(
+            name, "not_a_date", f"YYYY-MM-DD on or after {EARLIEST_AS_OF}", ARTICLE_FIELDS,
+            f"Pass {name} as YYYY-MM-DD, or leave it out for the version in force today.",
+        )
     return text
 
 
@@ -232,7 +270,7 @@ def _cache_put(client: EgovClient, key: str, value: dict) -> None:
 
 # --- Resolving a law -------------------------------------------------------
 
-def resolve_law(client: EgovClient, law: str) -> dict:
+def resolve_law(client: EgovClient, law: str, allowed: Optional[List[str]] = None) -> dict:
     """Turn what the user typed into {'key': <law_id or law_num>, 'how': ...}.
 
     Accepts a law ID (322AC0000000049), a law number (昭和二十二年法律第四十九号 or
@@ -241,8 +279,11 @@ def resolve_law(client: EgovClient, law: str) -> dict:
     """
     raw = str(law or "").strip()
     if not raw:
-        raise EgovError("bad_argument", "`law` is empty.",
-                        "Pass a law name such as 労働基準法 or 労基法, a law number, or a law ID.")
+        _bad_argument(
+            "law", "empty", "a law name, abbreviation, law number, or law ID",
+            allowed or ARTICLE_FIELDS,
+            "Pass a law name such as 労働基準法 or 労基法, a law number, or a law ID.",
+        )
     compact = re.sub(r"\s+", "", raw)
     if LAW_ID_RE.match(compact) or LAW_REVISION_ID_RE.match(compact):
         return {"key": compact, "how": "law ID"}
@@ -311,13 +352,17 @@ def search_laws(client: EgovClient, query: str, mode: str = "title", limit=10,
                 include_repealed: bool = False) -> dict:
     raw = str(query or "").strip()
     if not raw:
-        raise EgovError("bad_argument", "`query` is empty.",
-                        "Pass a law name (労働基準法), an abbreviation (労基法) or, with mode='text', a phrase.")
+        _bad_argument(
+            "query", "empty", "a law name, abbreviation, or a phrase when mode is text", SEARCH_FIELDS,
+            "Pass a law name (労働基準法), an abbreviation (労基法) or, with mode='text', a phrase.",
+        )
     limit = _clamp(limit, 10, 1, 50)
     mode = (mode or "title").strip().lower()
     if mode not in ("title", "text"):
-        raise EgovError("bad_argument", f"mode must be 'title' or 'text', got {mode!r}.",
-                        "Use mode='title' to find a law by name, mode='text' to find laws that mention a phrase.")
+        _bad_argument(
+            "mode", "not_in_set", "title or text", SEARCH_FIELDS,
+            "Use mode='title' to find a law by name, mode='text' to find laws that mention a phrase.",
+        )
     if mode == "text":
         return _search_text(client, raw, limit)
 
@@ -598,9 +643,10 @@ def _trim(text: str, max_chars: int):
 def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Optional[str] = None,
                 max_chars=DEFAULT_MAX_CHARS, compare_with: Optional[str] = None) -> dict:
     if article in (None, ""):
-        raise EgovError("bad_argument", "`article` is required.",
-                        "Pass the article number, e.g. '第32条', '32', or '第三十二条の二'. "
-                        "Use egov_law_search to look up a law without reading an article.")
+        _bad_argument(
+            "article", "empty", "an article number such as 32, 第32条, or 第三十二条の二", ARTICLE_FIELDS,
+            "Pass the article number. Use egov_law_search to look up a law without reading an article.",
+        )
     if re.search(r"別表|様式|別記|別図|付録", str(article)):
         resolve_law(client, law)  # an unknown or ambiguous law name is reported first
         url = _url_for(client, law)
@@ -624,19 +670,20 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
         else:
             ref = parse_article(rest)
             suppl_paragraph = None
-    except ValueError as error:
-        raise EgovError("bad_argument", str(error),
-                        "Fix the number and call again. Items (号), 本文 and ただし書 cannot be selected; "
-                        "ask for the article or its paragraph.") from None
+    except ValueError:
+        _bad_argument(
+            "article", "unparsed", "an article number such as 32, 第32条, or 第三十二条の二", ARTICLE_FIELDS,
+            "Fix the number and call again. Items (号), 本文 and ただし書 cannot be selected; "
+            "ask for the article or its paragraph.",
+        )
     if ref is not None and explicit_paragraph:
         ref = ArticleRef(numbers=ref.numbers, paragraph=explicit_paragraph)
     as_of = _check_date(as_of, "as_of")
     compare_with = _check_date(compare_with, "compare_with")
     for name, value in (("as_of", as_of), ("compare_with", compare_with)):
         if value and value < EARLIEST_AS_OF:
-            raise EgovError(
-                "bad_argument",
-                f"e-Gov keeps law versions from {EARLIEST_AS_OF} onward; {name}={value} is earlier.",
+            _bad_argument(
+                name, "before_earliest", f"YYYY-MM-DD on or after {EARLIEST_AS_OF}", ARTICLE_FIELDS,
                 f"Use a {name} date on or after {EARLIEST_AS_OF}, or call egov_law_revisions to see which amendment "
                 "was in force on the date you need (older wording is not available through e-Gov).",
             )
@@ -755,7 +802,7 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
         "as_of": as_of or _today_jst(),
         "resolved_by": resolved["how"],
         "url": law_page_url(info.get("law_id") or ""),
-        "source": _source(),
+        "source": _source(law_page_url(info.get("law_id") or ""), as_of or _today_jst()),
     }
     if ref is not None and ref.paragraph:
         out["article"] = label
@@ -1036,7 +1083,7 @@ def _amended_by(revision: dict) -> Optional[str]:
 
 def get_revisions(client: EgovClient, law: str, limit=10) -> dict:
     limit = _clamp(limit, 10, 1, 50)
-    resolved = resolve_law(client, law)
+    resolved = resolve_law(client, law, REVISION_FIELDS)
     key = resolved["key"]
     if LAW_REVISION_ID_RE.match(key):
         key = key.split("_", 1)[0]
@@ -1120,7 +1167,10 @@ def get_revisions(client: EgovClient, law: str, limit=10) -> dict:
                  "already in force are in earlier_versions and listed in steps_already_in_force. "
                  "earlier_versions: newest first."),
         "url": law_page_url(info.get("law_id") or ""),
-        "source": _source(),
+        "source": _source(
+            law_page_url(info.get("law_id") or ""),
+            (current or {}).get("in_force_since") or _today_jst(),
+        ),
     }
     if repealed is None:
         out.pop("repealed_on")  # only present for a law whose repeal has taken effect

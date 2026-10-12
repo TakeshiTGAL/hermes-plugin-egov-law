@@ -297,6 +297,10 @@ e-Gov が止まっていても入力待ちにはならず、1分半ほどでエ�
 - 条文中の表は1行ずつ「｜」区切りに平らにします。e-Gov の本文取得 API は試行版の扱いです。
 本プラグインは条文を取り出す道具で、法的助言はしません。
 
+## どう確かめているか
+
+試験台（`ship/harness/run.py`）と機械点検（`ship/preship_check.py`）を、直したあとも通しています。オフラインのテストは、記録した e-Gov の応答で、Python 3.11、3.12、3.14 の3つで走らせます。それに加えて、Nous の無料のモデルに同じ場面を流し、合図の前後を比べます。条文を伝えるときは `source.retrieved_at`、`source.url`、`source.as_of` を一緒に出します。道具を呼んでいないときは、取得していないと言い、記憶から条文を書きません。
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Law data: e-Gov 法令検索, Digital Agency of Japan, under PDL 1.0.

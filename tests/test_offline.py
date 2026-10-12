@@ -32,6 +32,12 @@ def registered_tools(plugin):
             assert callable(handler)
             names.append(name)
 
+        def register_skill(self, name, path, description="", frontmatter=None):
+            text = Path(path).read_text(encoding="utf-8")
+            assert name == "read-law"
+            assert "記憶から条文を書かない" in text
+            assert "source.retrieved_at" in description
+
     plugin.register(Ctx())
     return names
 
@@ -70,6 +76,8 @@ def test_search_labor_standards_act(replay):
     assert top["match"] == "exact title"
     assert top["url"] == "https://laws.e-gov.go.jp/law/322AC0000000049"
     assert "e-Gov法令検索" in result["source"]["attribution"]
+    assert result["source"]["retrieved_at"].endswith("Z")
+    assert result["source"]["url"] == "https://laws.e-gov.go.jp/"
 
 
 def test_article_32_by_kanji_number_and_abbreviation(replay):
@@ -79,6 +87,9 @@ def test_article_32_by_kanji_number_and_abbreviation(replay):
     assert "一週間について四十時間" in result["text"]
     assert "\n２　" in result["text"]  # second paragraph numbered even though e-Gov leaves ParagraphNum empty
     assert result["resolved_by"] == "abbreviation"
+    assert result["source"]["as_of"] == result["as_of"]
+    assert result["source"]["url"] == result["url"]
+    assert result["source"]["retrieved_at"].endswith("Z")
 
 
 def test_search_personal_information_act(replay):
@@ -542,6 +553,11 @@ def test_compare_with_reports_a_line_diff(plugin):
     bad = json.loads(handlers["egov_law_article"]({"law": "322AC0000000049", "article": "1",
                                                    "compare_with": "2010-01-01"}))
     assert bad["error_type"] == "bad_argument" and "compare_with" in bad["error"]
+    assert bad["field"] == "compare_with"
+    assert bad["problem"] == "before_earliest"
+    assert bad["expected"] == "YYYY-MM-DD on or after 2017-04-01"
+    assert "law" in bad["allowed_fields"] and "article" in bad["allowed_fields"]
+    assert "2010-01-01" not in json.dumps(bad, ensure_ascii=False)
 
 
 def test_a_compare_outage_is_not_a_deleted_article(plugin):

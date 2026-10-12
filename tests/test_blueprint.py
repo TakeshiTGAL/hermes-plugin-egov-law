@@ -16,6 +16,9 @@ def test_register_without_the_blueprint_api_still_registers_three_tools(plugin):
         def register_tool(self, name, toolset, schema, handler, **kwargs):
             names.append(name)
 
+        def register_skill(self, name, path, description="", frontmatter=None):
+            return None
+
     assert plugin.blueprint.register_blueprint(Ctx()) is False
     plugin.register(Ctx())
     assert names == ["egov_law_search", "egov_law_article", "egov_law_revisions"]
@@ -27,6 +30,9 @@ def test_register_sends_the_weekly_watch_when_the_api_exists(plugin):
     class Ctx:
         def register_tool(self, name, toolset, schema, handler, **kwargs):
             pass
+
+        def register_skill(self, name, path, description="", frontmatter=None):
+            return None
 
         def register_automation_blueprint(self, key, **kwargs):
             seen["key"] = key
@@ -60,6 +66,9 @@ def test_a_failing_blueprint_api_does_not_drop_the_tools(plugin):
     class Ctx:
         def register_tool(self, name, toolset, schema, handler, **kwargs):
             names.append(name)
+
+        def register_skill(self, name, path, description="", frontmatter=None):
+            return None
 
         def register_automation_blueprint(self, key, **kwargs):
             raise RuntimeError("registrar broken")
