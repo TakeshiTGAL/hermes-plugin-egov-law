@@ -24,6 +24,7 @@ TOOLS = ["egov_law_search", "egov_law_article", "egov_law_revisions"]
 
 def registered_tools(plugin):
     names = []
+    called = {}
 
     class Ctx:
         def register_tool(self, name, toolset, schema, handler, **kwargs):
@@ -36,9 +37,17 @@ def registered_tools(plugin):
             text = Path(path).read_text(encoding="utf-8")
             assert name == "read-law"
             assert "記憶から条文を書かない" in text
+            assert "Do not write an article from memory" in text
             assert "source.retrieved_at" in description
+            assert not description.startswith("Quote")
+            assert frontmatter["metadata"]["hermes"]["requires_toolsets"] == ["egov_law"]
+            doc = yaml.safe_load(text.split("---", 2)[1])
+            assert doc["description"] == description
+            assert doc["metadata"]["hermes"]["requires_toolsets"] == ["egov_law"]
+            called["skill"] = True
 
     plugin.register(Ctx())
+    assert called.get("skill") is True
     return names
 
 

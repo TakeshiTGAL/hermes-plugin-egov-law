@@ -97,7 +97,7 @@ REVISION_FIELDS = ["law", "limit"]
 
 
 def _bad_argument(field: str, problem: str, expected: str, allowed: List[str], hint: str) -> None:
-    """断る値は、こちらの表の field / problem / expected / allowed_fields。入力の値は載せない。"""
+    """Refusal details are field, problem, expected, and allowed_fields. The caller's value is omitted."""
     raise EgovError(
         "bad_argument",
         f"{field} is not accepted ({problem}). Expected: {expected}.",
@@ -122,8 +122,11 @@ def _source(url: Optional[str] = None, as_of: Optional[str] = None) -> dict:
         "retrieved_at": _now_utc(),
         "url": url or "https://laws.e-gov.go.jp/",
         "note": (
-            "Pass attribution, retrieved_at, url and as_of along with any article you quote. "
-            "If you did not call the tool, say you did not fetch it. Do not write the article from memory."
+            "Pass attribution, retrieved_at, and url with any text you quote, plus as_of when that key is present "
+            "(the date the wording is as of; only an article returns it). "
+            "On a search, source.url is the e-Gov top page and each result has its own url. "
+            "If you did not call the tool, say you did not fetch it. Do not write the article from memory. "
+            + ATTRIBUTION_NOTE
         ),
     }
     if as_of:
@@ -662,6 +665,13 @@ def get_article(client: EgovClient, law: str, article, paragraph=None, as_of: Op
     rest, dropped = _drop_sub_paragraph(rest)
     try:
         explicit_paragraph = parse_paragraph(paragraph)
+    except ValueError:
+        _bad_argument(
+            "paragraph", "unparsed", "a paragraph number such as 2 or 第2項", ARTICLE_FIELDS,
+            "Fix the paragraph and call again. Items (号), 本文 and ただし書 cannot be selected; "
+            "ask for the article or its paragraph.",
+        )
+    try:
         if suppl and not rest:
             ref = None  # the whole 附則, or one of its paragraphs
             suppl_paragraph = explicit_paragraph
@@ -1167,10 +1177,7 @@ def get_revisions(client: EgovClient, law: str, limit=10) -> dict:
                  "already in force are in earlier_versions and listed in steps_already_in_force. "
                  "earlier_versions: newest first."),
         "url": law_page_url(info.get("law_id") or ""),
-        "source": _source(
-            law_page_url(info.get("law_id") or ""),
-            (current or {}).get("in_force_since") or _today_jst(),
-        ),
+        "source": _source(law_page_url(info.get("law_id") or "")),
     }
     if repealed is None:
         out.pop("repealed_on")  # only present for a law whose repeal has taken effect

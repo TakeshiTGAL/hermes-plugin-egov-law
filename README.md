@@ -1,8 +1,7 @@
 # jp-egov-law: Japanese laws for Hermes Agent, built on the e-Gov Law API
 
-Ask your Hermes agent about Japanese law and get the official text of the article, with its law
-number, the date the current version took effect, and a link to the source, instead of a
-paraphrase from memory.
+Ask your Hermes agent about Japanese law. When it calls a tool, you get the official text of the article, with its law
+number, the date the current version took effect, and a link to the source.
 
 The data comes from the API of [e-Gov 法令検索](https://laws.e-gov.go.jp/), the law database run by the
 Digital Agency of Japan (デジタル庁). No API key, no account, read-only.
@@ -241,7 +240,7 @@ python tests/record_fixtures.py   # re-record the responses the offline tests re
 hermes plugins validate . --install-deps   # the check the Hermes plugin catalog runs
 ```
 
-Python 3.11+ (what Hermes requires). No runtime dependencies.
+Offline tests were run on Python 3.12 and 3.14. Python 3.11 was not checked. Hermes asks for Python 3.11 or newer. No runtime dependencies.
 
 ## 日本語
 
@@ -297,9 +296,13 @@ e-Gov が止まっていても入力待ちにはならず、1分半ほどでエ�
 - 条文中の表は1行ずつ「｜」区切りに平らにします。e-Gov の本文取得 API は試行版の扱いです。
 本プラグインは条文を取り出す道具で、法的助言はしません。
 
+## How this was checked
+
+Offline tests replay recorded e-Gov responses. They were run on Python 3.12 and 3.14. Python 3.11 was not checked. A later run of five models, 40 sessions (39 answered) and 158 turns, still wrote statute text without calling the tool on 22 of those 158 turns. The `read-law` skill asks the model to pass `source.retrieved_at`, `source.url`, and `source.as_of` when the tool returned them, and to say the text was not fetched instead of writing an article from memory. That request is not a guarantee. The skill is registered with `requires_toolsets: [egov_law]`, so a host that filters skills by toolset omits it when that toolset is off. A host that does not pass toolset info still lists the skill.
+
 ## どう確かめているか
 
-試験台（`ship/harness/run.py`）と機械点検（`ship/preship_check.py`）を、直したあとも通しています。オフラインのテストは、記録した e-Gov の応答で、Python 3.11、3.12、3.14 の3つで走らせます。それに加えて、Nous の無料のモデルに同じ場面を流し、合図の前後を比べます。条文を伝えるときは `source.retrieved_at`、`source.url`、`source.as_of` を一緒に出します。道具を呼んでいないときは、取得していないと言い、記憶から条文を書きません。
+オフラインのテストは、記録した e-Gov の応答を再生する。走らせたのは Python 3.12 と 3.14 で、3.11 は確かめていない。あとからの 5 モデル・40 セッション（答えたもの 39）・158 ターンでは、道具を呼ばずに条文を書いたのが 22/158 残っている。`read-law` の skill は、道具が返した `source.retrieved_at`・`source.url`・返したときだけ `source.as_of` を一緒に出すこと、呼んでいないときは取得していないと言うことをモデルに求める。必ずそうする保証ではない。skill は `requires_toolsets: [egov_law]` で登録するので、道具セットで絞り込む Hermes は、そのセットが無いとき skill を出さない。道具セットの情報を渡さない Hermes は、skill を出したままにする。
 
 ## License
 

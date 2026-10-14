@@ -60,6 +60,25 @@ def test_register_sends_the_weekly_watch_when_the_api_exists(plugin):
     assert "Not converted to Japan time" in seen["slots"][2]["help"]
 
 
+def test_a_failing_skill_does_not_drop_the_tools(plugin):
+    names = []
+    seen = {}
+
+    class Ctx:
+        def register_tool(self, name, toolset, schema, handler, **kwargs):
+            names.append(name)
+
+        def register_skill(self, name, path, description="", frontmatter=None):
+            raise RuntimeError("skill registrar broken")
+
+        def register_automation_blueprint(self, key, **kwargs):
+            seen["key"] = key
+
+    plugin.register(Ctx())
+    assert names == ["egov_law_search", "egov_law_article", "egov_law_revisions"]
+    assert seen["key"] == "weekly-amendments"
+
+
 def test_a_failing_blueprint_api_does_not_drop_the_tools(plugin):
     names = []
 

@@ -10,13 +10,10 @@ e-Gov 法令 API v2 から、法令の検索・条文・改正履歴を読む。
 
 ## 0.1.2
 
-本物のモデル 5 個（stepfun/step-5-preview:free、upstage/solar-mini4:free、meituan/longcat-2.5-preview:free、poolside/laguna-s-2.1:free、stealth/missingno）、40 セッション（答えたもの 39、ターン 158）の記録から分かったこと。前の回は同じ場面・同じモデルで、新しい合図の定義で数え直した（ターン 142）。
+Tool descriptions say what each call returns, when to use it, and that it is read-only. `bad_argument` adds `field`, `problem`, `expected`, and `allowed_fields`, and does not repeat the caller's value. A paragraph that cannot be read is `field=paragraph`. `egov_law_article` returns `source.retrieved_at`, `source.url`, and `source.as_of` (the date the wording is as of). `egov_law_search` and `egov_law_revisions` return `source.retrieved_at` and `source.url`, and do not return `source.as_of`. On a search, `source.url` is the e-Gov top page; each result has its own `url`. The `read-law` skill asks the model to copy the fields the tool returned and not to write an article from memory when the tool was not called. The skill is registered with `metadata.hermes.requires_toolsets: [egov_law]`.
 
-- プラグインを迂回した（bypass）: 42 件（29.6%）→ 22 件（13.9%）
-- 出典を落とした（omitted_attribution）: 3 件（2.1%）→ 2 件（1.3%）
-- 呼ばずに、取得したと言う（unsourced_claim）: 2 件（1.4%）→ 1 件（0.6%）
-- 道具の選び違い（要らない道具、wrong_tool）: 13 件（9.2%）→ 15 件（9.5%）
+A later run of five models, 40 sessions (39 answered) and 158 turns, counted: bypass 22/158 (13.9%), omitted attribution 2/158 (1.3%), unsourced claim 1/158 (0.6%), wrong tool 15/158 (9.5%). A recount that said 142 turns and 42 bypasses is not in the saved summary, so it is not listed here.
 
-変えたこと: 道具の最初の文に、何を返すか・いつ使うか・読み取りだけかを書いた。`bad_argument` に `field`・`problem`・`expected`・`allowed_fields` を足し、利用者の入力値は載せない。成功の `source` に取得時刻・公式 URL・条文ならいつの時点かを必ず返す。skill に、その欄を一緒に伝えること、呼んでいないときは取得していないと言うこと、記憶から条文を書かないことを書いた。
+道具の説明に、何を返すか・いつ使うか・読み取りだけかを書いた。`bad_argument` には `field`・`problem`・`expected`・`allowed_fields` を足し、入力の値は載せない。項が読めないときは `field=paragraph`。条文は `source.retrieved_at`・`source.url`・文言の時点 `source.as_of` を返す。検索と改正履歴は取得時刻と URL を返し、`source.as_of` は返さない。検索の `source.url` は e-Gov のトップ頁で、各結果の `url` がその法令の頁である。`read-law` の skill は、返った欄を写すことと、呼んでいないときに記憶から条文を書かないことをモデルに求める。skill は `metadata.hermes.requires_toolsets: [egov_law]` で登録する。
 
-流し直して、迂回と出典落ちと呼んでいない取得の名乗りは減った。要らない道具が 2 件増えた。内訳は、条文を聞く場面で検索を先に呼ぶ、改正を聞く場面で検索を先に呼ぶ、日本の法令でない場面で検索を呼ぶ、である。説明を足す同じ直しは回していない。
+同じあとからの記録は、5 モデル・40 セッション（答えたもの 39）・ターン 158。迂回 22/158（13.9%）、出典落ち 2/158（1.3%）、呼んでいない取得の名乗り 1/158（0.6%）、要らない道具 15/158（9.5%）。ターン 142・迂回 42 という数え直しは、残っている集計には無いので書かない。

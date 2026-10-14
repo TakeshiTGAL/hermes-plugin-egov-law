@@ -14,7 +14,9 @@ _LAW_ARG = {
 SEARCH = {
     "name": "egov_law_search",
     "description": (
-        "Returns law titles, numbers, IDs and the official e-Gov URL; use it when the law is not already named; read-only. "
+        "Returns law titles, numbers, IDs, and each result's e-Gov page URL; use it when the law is not already named; read-only. "
+        "source.url is the e-Gov top page (https://laws.e-gov.go.jp/), not one law's page. "
+        "source has retrieved_at and url, and does not include as_of. "
         "If you did not call this tool, say you did not search and do not invent a law number. "
         "Find Japanese laws: query='労基法'; mode='text' searches text. "
         "Searches e-Gov, the official law database of the Digital Agency of Japan. Returns title, "
@@ -136,8 +138,9 @@ ARTICLE = {
 REVISIONS = {
     "name": "egov_law_revisions",
     "description": (
-        "Returns amendment and enforcement dates, the official URL, and source.retrieved_at; "
+        "Returns amendment and enforcement dates, the law's e-Gov page URL, and source.retrieved_at; "
         "use it when the question is when a change takes effect; read-only. "
+        "Does not return source.as_of (that is the wording date, and only egov_law_article returns it). "
         "If you did not call this tool, say you did not fetch the history and do not invent an act number. "
         "Japanese law amendment & enforcement dates: law='民法'. "
         "From e-Gov (改正履歴・施行日): which version is in force now and since when, "
