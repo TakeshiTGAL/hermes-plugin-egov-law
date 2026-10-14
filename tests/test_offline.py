@@ -55,6 +55,18 @@ def test_register_wires_three_tools(plugin):
     assert registered_tools(plugin) == TOOLS
 
 
+def test_measured_counts_use_the_cue_names():
+    readme = (PLUGIN_DIR / "README.md").read_text(encoding="utf-8")
+    changelog = (PLUGIN_DIR / "CHANGELOG.md").read_text(encoding="utf-8")
+    for text in (readme, changelog):
+        assert "wrote statute text without calling" not in text
+        assert "道具を呼ばずに条文を書いた" not in text
+        assert "web_search" in text
+        assert "missing_tool" in text
+        assert "unsourced_claim" in text
+    assert "142" not in changelog and "42 bypass" not in changelog
+
+
 def test_manifest_matches_registrations(plugin):
     manifest = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text(encoding="utf-8"))
     assert manifest["name"] == "jp-egov-law"
