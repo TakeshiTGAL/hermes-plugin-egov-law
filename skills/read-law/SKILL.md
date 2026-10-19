@@ -1,11 +1,9 @@
 ---
 name: read-law
-description: "Source fields for a Japanese statute fetched from e-Gov: source.retrieved_at, source.url, and source.as_of when egov_law_article returned it."
-metadata:
-  hermes:
-    requires_toolsets:
-      - egov_law
+description: "Before web_search, use tool_search to find the e-Gov law tools and tool_call to read an official Japanese statute. Source fields: source.retrieved_at, source.url, and source.as_of when egov_law_article returned it."
 ---
+
+日本の法令を聞かれたら、web_search の前に tool_search で e-Gov の道具を探し、tool_call で呼ぶ。tool_search の queries は英語で書く（例: "Japanese statute"）。
 
 When you quote an article, an amendment date, or a law number, copy `source.attribution`, `source.retrieved_at`, and `source.url` into the reply. Copy `source.as_of` only when the tool returned it. That key is the date the wording is as of, and only `egov_law_article` returns it. `egov_law_search` and `egov_law_revisions` do not. On a search, `source.url` is the e-Gov top page (`https://laws.e-gov.go.jp/`); each result's `url` is that law's page.
 

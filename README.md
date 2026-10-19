@@ -157,6 +157,8 @@ The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOM
 
 `egov_law_search`, `egov_law_article`, and `egov_law_revisions` stay available on v0.21.4 and v0.21.5, where the blueprint is skipped. Those tools are on for every platform by default, including gateways, so a guest a gateway admits can call them. Disable a platform with `hermes tools`. `tests/` is not loaded by `register()`.
 
+While this plugin is enabled, its `read-law` skill adds one line to the skills index of every session on every platform. That line stays on a platform where `hermes tools` turned these tools off; the skill can still be read there, but the calls are unavailable. The model in any session, including one a gateway admits a guest to, can load the skill. The skill is instructions only and sends nothing. `hermes plugins disable jp-egov-law` removes the tools and the skill together.
+
 ## Network, data and privacy
 
 - **One host.** The plugin sends HTTPS GET requests only to `https://laws.e-gov.go.jp`, under the
@@ -298,11 +300,7 @@ e-Gov が止まっていても入力待ちにはならず、1分半ほどでエ�
 
 ## How this was checked
 
-Offline tests replay recorded e-Gov responses. They were run on Python 3.12 and 3.14. Python 3.11 was not checked. A later run of five models, 40 sessions (39 answered) and 158 turns, counted 22 `bypass` hits: a built-in tool (web_search, read_file, terminal, or another in that set) was used instead of this plugin. Separately, `missing_tool` was 6 (the reply did not call the plugin tool that turn required) and `unsourced_claim` was 1 (the reply said the text had been fetched without a plugin call). The `read-law` skill asks the model to pass `source.retrieved_at`, `source.url`, and `source.as_of` when the tool returned them, and to say the text was not fetched instead of writing an article from memory. That request is not a guarantee. The skill is registered with `requires_toolsets: [egov_law]`, so a host that filters skills by toolset omits it when that toolset is off. A host that does not pass toolset info still lists the skill.
-
-## どう確かめているか
-
-オフラインのテストは、記録した e-Gov の応答を再生する。走らせたのは Python 3.12 と 3.14 で、3.11 は確かめていない。あとからの 5 モデル・40 セッション（答えたもの 39）・158 ターンでは、`bypass` が 22 件だった。プラグインの代わりに本体の道具（web_search、read_file、terminal など）を使った hit である。別に、`missing_tool` は 6 件（呼ぶべきプラグインの道具を呼ばずに答えた）、`unsourced_claim` は 1 件（プラグインを呼ばずに、取得したと名乗った）。`read-law` の skill は、道具が返した `source.retrieved_at`・`source.url`・返したときだけ `source.as_of` を一緒に出すこと、呼んでいないときは取得していないと言うことをモデルに求める。必ずそうする保証ではない。skill は `requires_toolsets: [egov_law]` で登録するので、道具セットで絞り込む Hermes は、そのセットが無いとき skill を出さない。道具セットの情報を渡さない Hermes は、skill を出したままにする。
+Offline tests replay recorded e-Gov responses. They were run on Python 3.12 and 3.14. Python 3.11 was not checked. A later run of five models, 40 sessions (39 answered) and 158 turns, counted 22 `bypass` hits: a built-in tool (web_search, read_file, terminal, or another in that set) was used instead of this plugin. Separately, `missing_tool` was 6 (the reply did not call the plugin tool that turn required) and `unsourced_claim` was 1 (the reply said the text had been fetched without a plugin call). The `read-law` skill asks the model to pass `source.retrieved_at`, `source.url`, and `source.as_of` when the tool returned them, and to say the text was not fetched instead of writing an article from memory. That request is not a guarantee. The skill stays in the model index while this plugin is enabled, including when Tool Search hides the plugin tools. The skill tells the model to find those tools with tool_search and call them with tool_call.
 
 ## License
 

@@ -10,6 +10,7 @@ import datetime as _dt
 import difflib
 import json
 import re
+import unicodedata
 from collections import OrderedDict
 from typing import Dict, Iterable, List, Optional
 
@@ -134,26 +135,58 @@ def _source(url: Optional[str] = None, as_of: Optional[str] = None) -> dict:
     return payload
 
 
-def _clamp(value, default: int, low: int, high: int) -> int:
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
+def _bound_int(value, default: int, low: int, high: int, field: str, example: str, allowed: List[str]) -> int:
+    """Accept an int, an integral float, or digits. Reject anything outside the range."""
+    if value is None:
         return default
+    number = None
+    if isinstance(value, bool):
+        number = None
+    elif isinstance(value, int):
+        number = value
+    elif isinstance(value, float) and value.is_integer():
+        number = int(value)
+    elif isinstance(value, str):
+        text = unicodedata.normalize("NFKC", value).strip()
+        if re.fullmatch(r"-?\d+", text):
+            number = int(text)
+    if number is None or not low <= number <= high:
+        _bad_argument(
+            field, "out_of_range", f"an integer from {low} to {high}, for example {example}", allowed,
+            f"Pass {field} from {low} to {high}, for example {example}.",
+        )
+    return number
+
+
+def _clamp(value, default: int, low: int, high: int) -> int:
+    if isinstance(value, float) and value.is_integer():
+        number = int(value)
+    elif isinstance(value, str):
+        text = unicodedata.normalize("NFKC", value).strip()
+        if re.fullmatch(r"-?\d+", text):
+            number = int(text)
+        else:
+            return default
+    else:
+        try:
+            number = int(value)
+        except (TypeError, ValueError):
+            return default
     return max(low, min(high, number))
 
 
 def _check_date(value: Optional[str], name: str) -> Optional[str]:
     if value in (None, ""):
         return None
-    text = str(value).strip()
+    text = unicodedata.normalize("NFKC", str(value)).strip().replace("/", "-").replace(".", "-")
     try:
-        _dt.date.fromisoformat(text)
+        parsed = _dt.date.fromisoformat(text)
     except ValueError:
         _bad_argument(
             name, "not_a_date", f"YYYY-MM-DD on or after {EARLIEST_AS_OF}", ARTICLE_FIELDS,
-            f"Pass {name} as YYYY-MM-DD, or leave it out for the version in force today.",
+            f"Pass {name} as YYYY-MM-DD, for example 2024-06-03, or leave it out for the version in force today.",
         )
-    return text
+    return parsed.isoformat()
 
 
 def _status(revision: dict) -> str:
@@ -359,7 +392,9 @@ def search_laws(client: EgovClient, query: str, mode: str = "title", limit=10,
             "query", "empty", "a law name, abbreviation, or a phrase when mode is text", SEARCH_FIELDS,
             "Pass a law name (労働基準法), an abbreviation (労基法) or, with mode='text', a phrase.",
         )
-    limit = _clamp(limit, 10, 1, 50)
+    limit = _bound_int(
+        limit, 10, 1, 50, "limit", "10", SEARCH_FIELDS,
+    )
     mode = (mode or "title").strip().lower()
     if mode not in ("title", "text"):
         _bad_argument(

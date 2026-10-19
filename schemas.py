@@ -14,20 +14,15 @@ _LAW_ARG = {
 SEARCH = {
     "name": "egov_law_search",
     "description": (
-        "Returns law titles, numbers, IDs, and each result's e-Gov page URL; use it when the law is not already named; read-only. "
-        "source.url is the e-Gov top page (https://laws.e-gov.go.jp/), not one law's page. "
+        "Japan laws (e-Gov): find a statute by name. "
+        "Read-only. source.url is the e-Gov top page (https://laws.e-gov.go.jp/), not one law's page. "
         "source has retrieved_at and url, and does not include as_of. "
         "If you did not call this tool, say you did not search and do not invent a law number. "
-        "Find Japanese laws: query='労基法'; mode='text' searches text. "
-        "Searches e-Gov, the official law database of the Digital Agency of Japan. Returns title, "
-        "law number (法令番号), law ID, type, abbreviation, the date the current version took effect, "
-        "and the e-Gov page URL. "
-        "Use it when you do not know which law applies, need a law's number or ID, or want to see related "
-        "laws (施行令, 施行規則). mode='title' (default) matches names and abbreviations; "
-        "mode='text' finds laws whose text contains a phrase (e.g. 年次有給休暇) and returns matching "
-        "sentences; they carry no article numbers, so read the likely article with egov_law_article next. "
-        "Do NOT call this first when the user already named a law and an article: call egov_law_article "
-        "directly, it accepts names and abbreviations itself."
+        "mode title matches names and abbreviations; mode text finds a phrase and returns sentences without article numbers, so call egov_law_article next. "
+        "Do not call this first when the user already named a law and an article. "
+        "Use it to find official Japanese legislation and legal text in e-Gov, such as the Civil Code on a contract, a sale, a lease, or a loan, "
+        "the Labor Standards Act, the childcare leave act, or the National Public Service Act for civil servants and public officers. "
+        "egov_law_article then takes the article number as digits, for example 32."
     ),
     "parameters": {
         "type": "object",
@@ -41,7 +36,6 @@ SEARCH = {
             },
             "mode": {
                 "type": "string",
-                "enum": ["title", "text"],
                 "default": "title",
                 "description": "mode is title or text. title matches names and abbreviations; text matches the body of laws.",
             },
@@ -58,31 +52,23 @@ SEARCH = {
                 "description": "Include repealed laws in title search (default false: laws in force only).",
             },
         },
-        "required": ["query"],
+        "required": [],
     },
 }
 
 ARTICLE = {
     "name": "egov_law_article",
     "description": (
-        "Returns one article's official text plus source.as_of, source.retrieved_at and source.url; "
-        "use it when a law and an article are named; read-only. "
+        "Japan laws (e-Gov): read one article's text. "
+        "Read-only. Returns the wording, source.as_of, source.retrieved_at, and source.url. "
         "If you did not call this tool, say you did not fetch it and do not write the article from memory. "
-        "Japanese law article: law='労基法', article='32' or '三十二条の二'. "
-        "Official text from e-Gov (Digital Agency of Japan), as in force today or on a given date. "
-        "One call is enough: pass the law by name or abbreviation and the article number in "
-        "any common form. Returns the article title and caption, the text with paragraph (項) and item (号) "
-        "numbering, the law number, the date this version took effect, the e-Gov URL and the attribution "
-        "to show (source.attribution: show it with any text you quote, as e-Gov's terms require). "
-        "Use it whenever the user cites or needs a provision, e.g. 労基法32条, 民法第415条, "
-        "個人情報保護法 第二十七条, or when you know the article that governs a topic. "
-        "To check whether an amendment changes the article, pass as_of=<the day before it takes effect> and "
-        "compare_with=<the day it takes effect> (egov_law_revisions gives both as each row's check): the same "
-        "call returns changed true/false, a line diff and the new wording. "
-        "Reads the main provisions (本則) and the law's own 附則 (article='附則第143条', or '附則' for one without "
-        "articles); not the separate 附則 of amending laws, 別表 or forms. A transitional 附則 can change how "
-        "an article applies for the time being without changing its wording; text_notes then names it. "
-        "Items (号), 本文 and ただし書 cannot be selected on their own."
+        "Pass the law by name or abbreviation and the article number. "
+        "Show source.attribution with any text you quote. "
+        "To compare an amendment, pass as_of and compare_with from egov_law_revisions. "
+        "Reads the main provisions and the law's own 附則, not 別表 or forms. "
+        "It returns the full text of that article, whether it is a Civil Code rule on a sale or a lease, "
+        "a duty of civil servants and public officers, or a childcare leave rule. "
+        "Pass the article number as digits, for example 32 or 32-2."
     ),
     "parameters": {
         "type": "object",
@@ -91,7 +77,7 @@ ARTICLE = {
             "article": {
                 "type": "string",
                 "description": (
-                    "Article number as a string, in any form: 第32条, 32条, 32, 三十二条, 第三十二条. "
+                    "Article number as digits or another written form: 32, 第32条, 32条, 三十二条, 第三十二条. "
                     "Branch articles: 第三十二条の二, 32の2, 32-2. A paragraph may be included: 第32条第2項."
                 ),
             },
@@ -131,30 +117,21 @@ ARTICLE = {
                 ),
             },
         },
-        "required": ["law", "article"],
+        "required": [],
     },
 }
 
 REVISIONS = {
     "name": "egov_law_revisions",
     "description": (
-        "Returns amendment and enforcement dates, the law's e-Gov page URL, and source.retrieved_at; "
-        "use it when the question is when a change takes effect; read-only. "
-        "Does not return source.as_of (that is the wording date, and only egov_law_article returns it). "
+        "Japan laws (e-Gov): when an amendment takes effect. "
+        "Read-only. Returns enforcement dates, the law's e-Gov page URL, and source.retrieved_at. "
+        "Does not return source.as_of (only egov_law_article returns that wording date). "
         "If you did not call this tool, say you did not fetch the history and do not invent an act number. "
-        "Japanese law amendment & enforcement dates: law='民法'. "
-        "From e-Gov (改正履歴・施行日): which version is in force now and since when, "
-        "amendments already passed but not yet in force with their scheduled dates, "
-        "and older versions with the amending law's name and number. next_amendment is the soonest scheduled "
-        "one. Each entry says change (amendment, repeal, or this law's own provisions taking effect), "
-        "title_names_this_law (does the amending law's title name this law) and, for a law titled "
-        "'〈X〉の施行に伴う…', follow_up_of=X. Neither tells how much an article changes: each amendment row "
-        "carries check = {as_of, compare_with} to pass to egov_law_article for that. Each enforcement step of a staged "
-        "amendment is its own version with its own date. Covers amendments already promulgated (公布) and "
-        "recorded in e-Gov for this one law; bills still in the Diet, and changes to its 施行令/施行規則 "
-        "(separate laws: call again with their names), are not included. Use it to answer 'when did/does this "
-        "change take effect' or 'is there an upcoming amendment'. "
-        "To read the wording of a specific version, call egov_law_article with as_of."
+        "Each row's check pair is as_of and compare_with for egov_law_article. "
+        "Bills still in the Diet, and changes to a separate 施行令 or 施行規則, are not included. "
+        "It works for any law in e-Gov, including the laws on civil servants and on childcare leave, and the Civil Code rules on a loan. "
+        "To read an article afterwards, pass its number as digits, such as 32, to egov_law_article."
     ),
     "parameters": {
         "type": "object",
@@ -168,7 +145,7 @@ REVISIONS = {
                 "description": "Max entries in each list (scheduled amendments, earlier versions); default 10, max 50.",
             },
         },
-        "required": ["law"],
+        "required": [],
     },
 }
 

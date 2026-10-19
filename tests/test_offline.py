@@ -40,10 +40,10 @@ def registered_tools(plugin):
             assert "Do not write an article from memory" in text
             assert "source.retrieved_at" in description
             assert not description.startswith("Quote")
-            assert frontmatter["metadata"]["hermes"]["requires_toolsets"] == ["egov_law"]
+            assert frontmatter is None
             doc = yaml.safe_load(text.split("---", 2)[1])
             assert doc["description"] == description
-            assert doc["metadata"]["hermes"]["requires_toolsets"] == ["egov_law"]
+            assert "metadata" not in doc
             called["skill"] = True
 
     plugin.register(Ctx())

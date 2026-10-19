@@ -15,12 +15,9 @@ logger = logging.getLogger(__name__)
 
 _SKILL = Path(__file__).resolve().parent / "skills" / "read-law" / "SKILL.md"
 _SKILL_DESCRIPTION = (
-    "Source fields for a Japanese statute fetched from e-Gov: "
-    "source.retrieved_at, source.url, and source.as_of when egov_law_article returned it."
+    "Before web_search, use tool_search to find the e-Gov law tools and tool_call to read an official Japanese statute. "
+    "Source fields: source.retrieved_at, source.url, and source.as_of when egov_law_article returned it."
 )
-# Passed to register_skill. Hermes filters <available_skills> from this argument,
-# not from the SKILL.md file. A host that does not pass toolset info still lists it.
-_SKILL_FRONTMATTER = {"metadata": {"hermes": {"requires_toolsets": ["egov_law"]}}}
 
 
 def register(ctx):
@@ -38,7 +35,6 @@ def register(ctx):
             "read-law",
             _SKILL,
             description=_SKILL_DESCRIPTION,
-            frontmatter=_SKILL_FRONTMATTER,
         )
     except Exception:
         logger.warning("jp-egov-law skill was not registered", exc_info=True)

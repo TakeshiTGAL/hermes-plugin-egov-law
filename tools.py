@@ -22,7 +22,7 @@ def _dump(payload: dict) -> str:
 
 
 def _error(kind: str, message: str, hint: str = "", details: Optional[dict] = None) -> str:
-    payload = {"error": message, "error_type": kind}
+    payload = {"ok": False, "error": message, "error_type": kind}
     for key, value in (details or {}).items():
         if key not in payload and value not in (None, ""):
             payload[key] = value
@@ -45,22 +45,37 @@ def _as_handler(fetch: Callable[[dict], dict]) -> Callable:
     return handler
 
 
+def _take(args: dict, pairs: tuple) -> dict:
+    """Fill the canonical name from an alias, then drop the alias so it is not unknown."""
+    out = dict(args)
+    for src, dst in pairs:
+        if src not in out:
+            continue
+        if out.get(dst) in (None, ""):
+            out[dst] = out[src]
+        del out[src]
+    return out
+
+
 def make_handlers(client: Optional[EgovClient] = None) -> Dict[str, Callable]:
     """Handlers bound to one client. Tests pass a client with an injected base URL or transport."""
     client = client or EgovClient()
 
     def search(args: dict) -> dict:
+        args = _take(args, (("law_name", "query"), ("q", "query")))
         return laws.search_laws(client, args.get("query"), mode=args.get("mode") or "title",
                                 limit=args.get("limit", 10),
                                 include_repealed=bool(args.get("include_repealed", False)))
 
     def article(args: dict) -> dict:
+        args = _take(args, (("law_id", "law"), ("number", "article"), ("article_number", "article")))
         return laws.get_article(client, args.get("law"), args.get("article"),
                                 paragraph=args.get("paragraph"), as_of=args.get("as_of"),
                                 max_chars=args.get("max_chars", laws.DEFAULT_MAX_CHARS),
                                 compare_with=args.get("compare_with"))
 
     def revisions(args: dict) -> dict:
+        args = _take(args, (("law_id", "law"),))
         return laws.get_revisions(client, args.get("law"), limit=args.get("limit", 10))
 
     return {

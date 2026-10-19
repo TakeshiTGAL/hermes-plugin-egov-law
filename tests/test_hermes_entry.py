@@ -102,11 +102,7 @@ def test_entry_article_returns_wording_date_and_history_does_not(replay, plugin)
     assert found["results"][0]["url"] == "https://laws.e-gov.go.jp/law/322AC0000000049"
 
 
-def test_skill_stays_hidden_when_the_toolset_is_off(plugin):
-    _hermes()
-    from agent.prompt_builder import _skill_should_show
-    from agent.skill_utils import extract_skill_conditions
-
+def test_skill_stays_listed_without_a_toolset_requirement(plugin):
     seen = {}
 
     class Ctx:
@@ -116,9 +112,11 @@ def test_skill_stays_hidden_when_the_toolset_is_off(plugin):
         def register_skill(self, name, path, description="", frontmatter=None):
             seen["frontmatter"] = frontmatter
 
-    _hermes()
     plugin.register(Ctx())
-    conditions = extract_skill_conditions(seen["frontmatter"])
-    assert _skill_should_show(conditions, set(), set()) is False
-    assert _skill_should_show(conditions, set(), {"egov_law"}) is True
-    assert _skill_should_show(conditions, None, None) is True
+    assert seen["frontmatter"] is None
+    _hermes()
+    from agent.prompt_builder import _skill_should_show
+    from agent.skill_utils import extract_skill_conditions
+
+    conditions = extract_skill_conditions({})
+    assert _skill_should_show(conditions, set(), set()) is True
