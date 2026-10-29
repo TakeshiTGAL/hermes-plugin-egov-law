@@ -67,11 +67,21 @@ def test_measured_counts_use_the_cue_names():
     assert "142" not in changelog and "42 bypass" not in changelog
 
 
+def test_nudge_is_absent_on_a_settings_question(plugin):
+    assert plugin._nudge_law(user_message="hermes の設定はどこで見る？") is None
+    assert plugin._nudge_law(user_message="コーヒーの入れ方") is None
+    assert plugin._nudge_law(user_message="補助金の条件") is None
+    named = plugin._nudge_law(user_message="労働基準法第32条")
+    assert isinstance(named, dict)
+    assert "egov_law_article" in named["context"]
+    assert plugin._nudge_law(user_message="トヨタ自動車") is None
+
+
 def test_manifest_matches_registrations(plugin):
     manifest = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text(encoding="utf-8"))
     assert manifest["name"] == "jp-egov-law"
     assert manifest["provides_tools"] == registered_tools(plugin)
-    assert manifest["provides_hooks"] == []
+    assert manifest["provides_hooks"] == ["pre_llm_call", "pre_tool_call"]
     assert "requires_env" not in manifest
     assert manifest["version"] == plugin.version.__version__
     assert manifest["manifest_version"] == 2 and manifest["requires_hermes"] == ">=0.21.4"

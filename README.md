@@ -1,5 +1,13 @@
 # jp-egov-law: Japanese laws for Hermes Agent, built on the e-Gov Law API
 
+## 何が唯一か
+
+`pre_tool_call` blocks `egov_law_search` before any HTTP call when `query` is empty, or when `mode` is title and the query does not contain 法, 令, 条例, 規則, 憲法, or 条 outside the word 条件. `条件` and `必要条件` are blocked. `辞令` and `指令` are blocked, because `令` after `辞` or `指` is not a statute marker. `第32条`, `条約`, `条例`, `施行令`, `政令`, and `命令` are not. The block says no article URL was written and a URL was not guessed. e-Gov's site accepts a company name and can return unrelated laws. This gate does not. A text-mode search for a phrase inside a law is not blocked. When the user, or a tool result, already names a law and an article, `egov_law_article` returns `source.url` for that article. The tool does not say a corporation is eligible for a subsidy. `pre_llm_call` adds its paragraph only on a statute question: 法令, 法律, 条文, e-Gov, 第N条, or 条 that is not the 条 in 条件, or when `egov_law_search`, `egov_law_article`, or `egov_law_revisions` was called in the previous turn. トヨタ自動車 alone, フィボナッチ数列, and グラタン皿 do not add it. 補助金の条件 is not a statute question. A tool name typed in the message is not a call. On any other turn, including hermes の設定はどこで見る？, the hook adds nothing. The paragraph is: "Do not call egov_law_search with an empty query or with a company name. pre_tool_call blocks that search before HTTP. No article URL is written and a URL is not guessed. Call egov_law_article when the user named a law and an article, or when a tool result already names law_title and article, and copy source.url. If article is null, do not guess. Do not call tool_describe. Do not write 取得しました or 確認できます."
+
+## Comparison
+
+Facts checked for the cluster note on 2026-10-26. Posts on that date called e-Gov 法令検索 hard to use. This tool does not replace the search site. `egov_law_article` returns `source.url` for one article the caller named. `pre_tool_call` refuses a title search that does not name a statute, including an empty query and a company name, and the block says a URL was not guessed.
+
 Ask your Hermes agent about Japanese law. When it calls a tool, you get the official text of the article, with its law
 number, the date the current version took effect, and a link to the source.
 
@@ -157,7 +165,7 @@ The job is an ordinary cron job in that profile's `cron/jobs.json` (`<HERMES_HOM
 
 `egov_law_search`, `egov_law_article`, and `egov_law_revisions` stay available on v0.21.4 and v0.21.5, where the blueprint is skipped. Those tools are on for every platform by default, including gateways, so a guest a gateway admits can call them. Disable a platform with `hermes tools`. `tests/` is not loaded by `register()`.
 
-While this plugin is enabled, its `read-law` skill adds one line to the skills index of every session on every platform. That line stays on a platform where `hermes tools` turned these tools off; the skill can still be read there, but the calls are unavailable. The model in any session, including one a gateway admits a guest to, can load the skill. The skill is instructions only and sends nothing. `hermes plugins disable jp-egov-law` removes the tools and the skill together.
+On a platform where `hermes tools` turned these tools off, the calls are unavailable. The model in any session, including one a gateway admits a guest to, can load the skill. The skill is instructions only and sends nothing. `hermes plugins disable jp-egov-law` removes the tools and the skill together.
 
 ## Network, data and privacy
 
